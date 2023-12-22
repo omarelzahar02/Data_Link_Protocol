@@ -13,26 +13,19 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-#ifndef __DATA_LINK_NODE_H_
-#define __DATA_LINK_NODE_H_
+//
+// TODO generated message class
+//
+cplusplus {{
+#include <bitset>
+typedef  std::bitset<8> bits;
+}}
+class bits {@existingClass;}
 
-#include <omnetpp.h>
-#include "frame_m.h"
-#include <fstream>
-#include <iostream>
-#include <vector>
-#include <string>
-
-using namespace omnetpp;
-
-/**
- * TODO - Generated class
- */
-class Node : public cSimpleModule
-{
-  protected:
-    virtual void initialize() override;
-    virtual void handleMessage(cMessage *msg) override;
-};
-
-#endif
+packet Frame {
+    @customize(true);  // see the generated C++ header for more info
+    int Seq_Num;
+    int M_Type;         // 0->data   1->Ack    2->Nack
+    string M_Payload;
+    bits mycheckbits;
+}

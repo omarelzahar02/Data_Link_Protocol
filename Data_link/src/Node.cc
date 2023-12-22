@@ -14,18 +14,7 @@
 //
 
 #include "Node.h"
-#define MAX_SEQ 1000
-#define NR_BUFS ((MAX_SEQ + 1) / 2)
-bool no_ack = true;
-seq_nr old_frame = MAX_SEQ - 1;                                     // seq_nr is not colored green
 
-void inc(int &k)
-{
-    if (k < MAX_SEQ)
-        k = k + 1;
-    else
-        k = 0;
-}
 
 bool between(seq_nr a, seq_nr b, seq_nr c)                          // maybe function will be needed to be static
 {
@@ -37,7 +26,7 @@ bool between(seq_nr a, seq_nr b, seq_nr c)                          // maybe fun
 
 void send_data(frame_kind fk, seq_nr frame_nr, seq_nr frame_expected, packet buffer[])
 {
-    frame s;
+    Frame_Base s;
     s.kind = fk;
     if(fk == data)
     {
@@ -59,14 +48,7 @@ void send_data(frame_kind fk, seq_nr frame_nr, seq_nr frame_expected, packet buf
 
 Define_Module(Node);
 
-typedef enum
-{
-    FRAME_ARRIVAL,
-    CHECKSUM_ERROR,
-    TIMEOUT,
-    NETWORK_LAYER_READY,
-    ACK_TIMEOUT
-} Event_Type;
+
 
 void Node::initialize()
 {
@@ -75,7 +57,10 @@ void Node::initialize()
     std::vector<std::string> lines;
     std::vector<std::string> data;
     std::vector<std::string> status;
-    file.open("input0.txt");
+    if(strcmp(getName(),"Node0") == 0)
+        file.open("input0.txt");
+    else
+        file.open("input1.txt");
     if (!file.is_open())
     {
         std::cout << "Error opening file" << std::endl;
