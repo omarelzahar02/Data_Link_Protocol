@@ -6,15 +6,15 @@ package data_link;
 //
 network Network
 {
-    @display("bgb=634,365");
-    parameters:
-        int WS;         // Sender window size
-        int WR;         // Receiver window size
-        int TO;         // Timeout
-        int PT;         // Processing time
-        int TD;         // Transmission delay
-        int ED;         // Error delay
-        int DD;         // Duplication delay
+    // parameters:
+    //     int WS;         // Sender window size
+    //     int WR;         // Receiver window size
+    //     int TO;         // Timeout
+    //     int PT;         // Processing time
+    //     int TD;         // Transmission delay
+    //     int ED;         // Error delay
+    //     int DD;         // Duplication delay
+        @display("bgb=634,365");
     submodules:
         Node0: Node {
             @display("p=110,86;i=device/wifilaptop");

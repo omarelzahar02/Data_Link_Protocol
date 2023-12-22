@@ -29,7 +29,8 @@ typedef  std::bitset<8> bits;
  * {
  *     \@customize(true);  // see the generated C++ header for more info
  *     int Seq_Num;
- *     int M_Type;
+ *     int M_Type;         // 0->data   1->Ack    2->Nack
+ *     int ack;
  *     string M_Payload;
  *     bits mycheckbits;
  * }
@@ -64,6 +65,7 @@ class Frame_Base : public ::omnetpp::cPacket
   protected:
     int Seq_Num = 0;
     int M_Type = 0;
+    int ack = 0;
     omnetpp::opp_string M_Payload;
     bits mycheckbits;
 
@@ -90,6 +92,9 @@ class Frame_Base : public ::omnetpp::cPacket
 
     virtual int getM_Type() const;
     virtual void setM_Type(int M_Type);
+
+    virtual int getAck() const;
+    virtual void setAck(int ack);
 
     virtual const char * getM_Payload() const;
     virtual void setM_Payload(const char * M_Payload);

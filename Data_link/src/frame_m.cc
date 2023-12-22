@@ -460,6 +460,7 @@ void Frame_Base::copy(const Frame_Base& other)
 {
     this->Seq_Num = other.Seq_Num;
     this->M_Type = other.M_Type;
+    this->ack = other.ack;
     this->M_Payload = other.M_Payload;
     this->mycheckbits = other.mycheckbits;
 }
@@ -469,6 +470,7 @@ void Frame_Base::parsimPack(omnetpp::cCommBuffer *b) const
     ::omnetpp::cPacket::parsimPack(b);
     doParsimPacking(b,this->Seq_Num);
     doParsimPacking(b,this->M_Type);
+    doParsimPacking(b,this->ack);
     doParsimPacking(b,this->M_Payload);
     doParsimPacking(b,this->mycheckbits);
 }
@@ -478,6 +480,7 @@ void Frame_Base::parsimUnpack(omnetpp::cCommBuffer *b)
     ::omnetpp::cPacket::parsimUnpack(b);
     doParsimUnpacking(b,this->Seq_Num);
     doParsimUnpacking(b,this->M_Type);
+    doParsimUnpacking(b,this->ack);
     doParsimUnpacking(b,this->M_Payload);
     doParsimUnpacking(b,this->mycheckbits);
 }
@@ -500,6 +503,16 @@ int Frame_Base::getM_Type() const
 void Frame_Base::setM_Type(int M_Type)
 {
     this->M_Type = M_Type;
+}
+
+int Frame_Base::getAck() const
+{
+    return this->ack;
+}
+
+void Frame_Base::setAck(int ack)
+{
+    this->ack = ack;
 }
 
 const char * Frame_Base::getM_Payload() const
@@ -529,6 +542,7 @@ class FrameDescriptor : public omnetpp::cClassDescriptor
     enum FieldConstants {
         FIELD_Seq_Num,
         FIELD_M_Type,
+        FIELD_ack,
         FIELD_M_Payload,
         FIELD_mycheckbits,
     };
@@ -598,7 +612,7 @@ const char *FrameDescriptor::getProperty(const char *propertyName) const
 int FrameDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *base = getBaseClassDescriptor();
-    return base ? 4+base->getFieldCount() : 4;
+    return base ? 5+base->getFieldCount() : 5;
 }
 
 unsigned int FrameDescriptor::getFieldTypeFlags(int field) const
@@ -612,10 +626,11 @@ unsigned int FrameDescriptor::getFieldTypeFlags(int field) const
     static unsigned int fieldTypeFlags[] = {
         FD_ISEDITABLE,    // FIELD_Seq_Num
         FD_ISEDITABLE,    // FIELD_M_Type
+        FD_ISEDITABLE,    // FIELD_ack
         FD_ISEDITABLE,    // FIELD_M_Payload
         FD_ISCOMPOUND,    // FIELD_mycheckbits
     };
-    return (field >= 0 && field < 4) ? fieldTypeFlags[field] : 0;
+    return (field >= 0 && field < 5) ? fieldTypeFlags[field] : 0;
 }
 
 const char *FrameDescriptor::getFieldName(int field) const
@@ -629,10 +644,11 @@ const char *FrameDescriptor::getFieldName(int field) const
     static const char *fieldNames[] = {
         "Seq_Num",
         "M_Type",
+        "ack",
         "M_Payload",
         "mycheckbits",
     };
-    return (field >= 0 && field < 4) ? fieldNames[field] : nullptr;
+    return (field >= 0 && field < 5) ? fieldNames[field] : nullptr;
 }
 
 int FrameDescriptor::findField(const char *fieldName) const
@@ -641,8 +657,9 @@ int FrameDescriptor::findField(const char *fieldName) const
     int baseIndex = base ? base->getFieldCount() : 0;
     if (strcmp(fieldName, "Seq_Num") == 0) return baseIndex + 0;
     if (strcmp(fieldName, "M_Type") == 0) return baseIndex + 1;
-    if (strcmp(fieldName, "M_Payload") == 0) return baseIndex + 2;
-    if (strcmp(fieldName, "mycheckbits") == 0) return baseIndex + 3;
+    if (strcmp(fieldName, "ack") == 0) return baseIndex + 2;
+    if (strcmp(fieldName, "M_Payload") == 0) return baseIndex + 3;
+    if (strcmp(fieldName, "mycheckbits") == 0) return baseIndex + 4;
     return base ? base->findField(fieldName) : -1;
 }
 
@@ -657,10 +674,11 @@ const char *FrameDescriptor::getFieldTypeString(int field) const
     static const char *fieldTypeStrings[] = {
         "int",    // FIELD_Seq_Num
         "int",    // FIELD_M_Type
+        "int",    // FIELD_ack
         "string",    // FIELD_M_Payload
         "bits",    // FIELD_mycheckbits
     };
-    return (field >= 0 && field < 4) ? fieldTypeStrings[field] : nullptr;
+    return (field >= 0 && field < 5) ? fieldTypeStrings[field] : nullptr;
 }
 
 const char **FrameDescriptor::getFieldPropertyNames(int field) const
@@ -745,6 +763,7 @@ std::string FrameDescriptor::getFieldValueAsString(omnetpp::any_ptr object, int 
     switch (field) {
         case FIELD_Seq_Num: return long2string(pp->getSeq_Num());
         case FIELD_M_Type: return long2string(pp->getM_Type());
+        case FIELD_ack: return long2string(pp->getAck());
         case FIELD_M_Payload: return oppstring2string(pp->getM_Payload());
         case FIELD_mycheckbits: return "";
         default: return "";
@@ -765,6 +784,7 @@ void FrameDescriptor::setFieldValueAsString(omnetpp::any_ptr object, int field, 
     switch (field) {
         case FIELD_Seq_Num: pp->setSeq_Num(string2long(value)); break;
         case FIELD_M_Type: pp->setM_Type(string2long(value)); break;
+        case FIELD_ack: pp->setAck(string2long(value)); break;
         case FIELD_M_Payload: pp->setM_Payload((value)); break;
         default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'Frame_Base'", field);
     }
@@ -782,6 +802,7 @@ omnetpp::cValue FrameDescriptor::getFieldValue(omnetpp::any_ptr object, int fiel
     switch (field) {
         case FIELD_Seq_Num: return pp->getSeq_Num();
         case FIELD_M_Type: return pp->getM_Type();
+        case FIELD_ack: return pp->getAck();
         case FIELD_M_Payload: return pp->getM_Payload();
         case FIELD_mycheckbits: return omnetpp::toAnyPtr(&pp->getMycheckbits()); break;
         default: throw omnetpp::cRuntimeError("Cannot return field %d of class 'Frame_Base' as cValue -- field index out of range?", field);
@@ -802,6 +823,7 @@ void FrameDescriptor::setFieldValue(omnetpp::any_ptr object, int field, int i, c
     switch (field) {
         case FIELD_Seq_Num: pp->setSeq_Num(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_M_Type: pp->setM_Type(omnetpp::checked_int_cast<int>(value.intValue())); break;
+        case FIELD_ack: pp->setAck(omnetpp::checked_int_cast<int>(value.intValue())); break;
         case FIELD_M_Payload: pp->setM_Payload(value.stringValue()); break;
         default: throw omnetpp::cRuntimeError("Cannot set field %d of class 'Frame_Base'", field);
     }

@@ -26,6 +26,7 @@ packet Frame {
     @customize(true);  // see the generated C++ header for more info
     int Seq_Num;
     int M_Type;         // 0->data   1->Ack    2->Nack
+    int ack;
     string M_Payload;
     bits mycheckbits;
 }
