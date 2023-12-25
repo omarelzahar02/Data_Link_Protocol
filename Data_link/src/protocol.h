@@ -18,6 +18,9 @@
     else             \
         k = 0
 
+#define FLAG_BYTE '#'
+#define ESCAPE_BYTE '/'
+
 typedef int seq_nr;
 typedef int ack_nr;
 typedef int timing;

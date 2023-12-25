@@ -24,17 +24,25 @@ void Node::initialize() {
     packet *temp = new packet;
     from_network_layer(temp);
 
-    seq_nr ack_expected;
-    seq_nr next_frame_to_send;
-    seq_nr frame_expected;
-    seq_nr too_far;
-    seq_nr nbuffered;
-    seq_nr i;
-    event_type event;
-    Frame_Base *r = new Frame_Base;
-    packet inbuffer[NR_BUFS];
-    packet outbuffer[NR_BUFS];
-    bool arrived[NR_BUFS];
+    WS = getParentModule()->par("WS").intValue();
+    WR = getParentModule()->par("WR").intValue();
+    TO = getParentModule()->par("TO").intValue();
+    TD = getParentModule()->par("TD").doubleValue();
+    PT = getParentModule()->par("PT").doubleValue();
+    ED = getParentModule()->par("ED").doubleValue();
+    DD = getParentModule()->par("DD").doubleValue();
+    /////////////////////////////////////////////////////////////////////////////////////
+    // seq_nr ack_expected;
+    // seq_nr next_frame_to_send;
+    // seq_nr frame_expected;
+    // seq_nr too_far;
+    // seq_nr nbuffered;
+    // seq_nr i;
+    // event_type event;
+    // Frame_Base *r = new Frame_Base;
+    // packet inbuffer[NR_BUFS];
+    // packet outbuffer[NR_BUFS];
+    // bool arrived[NR_BUFS];
 
     // enable_network_layer();
     ack_expected = 0;
@@ -42,6 +50,7 @@ void Node::initialize() {
     frame_expected = 0;
     too_far = NR_BUFS;
     nbuffered = 0;
+    seq_nr oldest_frame = 0;
     for (i = 0; i < NR_BUFS; i++) {
         arrived[i] = false;
     }
@@ -54,8 +63,7 @@ void Node::initialize() {
         switch (event) {
             case NETWORK_LAYER_READY:
                 nbuffered++;
-
-                // from_network_layer(&outbuffer[next_frame_to_send % NR_BUFS]);
+                //from_network_layer(&outbuffer[next_frame_to_send % NR_BUFS]);
                 send_frame(DATA, next_frame_to_send, frame_expected, outbuffer);
                 inc(next_frame_to_send);
                 x++;
@@ -88,7 +96,22 @@ void Node::initialize() {
                     inc(ack_expected);
                 }
                 break;
+            case CHECKSUM_ERROR:
+                if (no_nack)
+                    send_frame(NACK, 0, frame_expected, outbuffer);
+                break;
+            case TIMEOUT:
+                send_frame(DATA, ack_expected, frame_expected, outbuffer);
+                break;
+            case ACK_TIMEOUT:
+                send_frame(ACK, 0, frame_expected, outbuffer);
+                break;
+
         }
+        // if(nbuffered < NR_BUFS)
+        //     enable_network_layer();
+        // else
+        //     disable_network_layer();
         if (x == 4)
             break;
     }
@@ -108,27 +131,7 @@ void Node::handleMessage(cMessage *msg) {
 
     // TODO - Generated method body
     /////////////////////////////////////////////////////////////////////////////////////
-    seq_nr ack_expected;
-    seq_nr next_frame_to_send;
-    seq_nr frame_expected;
-    seq_nr too_far;
-    seq_nr nbuffered;
-    seq_nr i;
-    event_type event;
-    Frame_Base *r = new Frame_Base;
-    packet inbuffer[NR_BUFS];
-    packet outbuffer[NR_BUFS];
-    bool arrived[NR_BUFS];
-
-    // enable_network_layer();
-    ack_expected = 0;
-    next_frame_to_send = 0;
-    frame_expected = 0;
-    too_far = NR_BUFS;
-    nbuffered = 0;
-    for (i = 0; i < NR_BUFS; i++) {
-        arrived[i] = false;
-    }
+    
     /////////////////////////////////////////////////////////////////////////////////////
 }
 
@@ -148,7 +151,7 @@ void Node::readfile() {
         while (getline(file, line)) {
             lines.push_back(line);
         }
-        std::cout << lines.size() << std::endl;
+        //std::cout << lines.size() << std::endl;
     }
     file.close();
 
@@ -163,7 +166,7 @@ void Node::readfile() {
     }
     for (int i = 0; i < lines.size(); i++) {
         // std::cout << status[i] << std::endl;
-        std::cout << data[i] << std::endl;
+        //std::cout << data[i] << std::endl;
     }
 }
 
@@ -178,7 +181,7 @@ bool Node::between(seq_nr a, seq_nr b, seq_nr c)  // maybe function will be need
 void Node::from_network_layer(packet *p) {
     p->ptext = data[0];
     data.erase(data.begin());
-    std::cout << "Data sent to physical layer: " << p->ptext << std::endl;
+    //std::cout << "Data sent to physical layer: " << p->ptext << std::endl;
 }
 
 void Node::to_physical_layer(Frame_Base *s) {
@@ -197,7 +200,7 @@ void Node::stop_timer(seq_nr k, bool &timer_on) {
 
 void Node::send_frame(frame_kind fk, seq_nr frame_nr, seq_nr frame_expected, packet buffer[]) {
     Frame_Base s;
-    std::cout << "ana geet" << std::endl;
+    //std::cout << "ana geet" << std::endl;
     s.setM_Type(fk);
     if (fk == DATA) {
         // error and delay will be handeled here
@@ -217,9 +220,20 @@ void Node::send_frame(frame_kind fk, seq_nr frame_nr, seq_nr frame_expected, pac
     // stop_ack_timer();                                                         //function needs to be implemented
 }
 
-void Node::check_sum(Frame_Base *s) {
+Frame_Base *Node::createFrame(Frame_Base *frame, std::string str, frame_kind fk, seq_nr frame_nr) {
+    check_sum(frame, str);
+    std::string temp = byte_stuffing(str);
+    frame->setM_Payload(temp.c_str());
+    frame->setSeq_Num(frame_nr);
+    frame->setAck((frame_expected + MAX_SEQ) % (MAX_SEQ + 1));
+    frame->setM_Type(fk);
+    
+    return frame;
+}
+
+void Node::check_sum(Frame_Base *s, std::string payload) {
     std::bitset<8> temp(0);
-    std::string payload = s->getM_Payload();
+    //std::string payload = s->getM_Payload();
     for (int i = 0; i < payload.size(); i++) {
         temp = temp ^ std::bitset<8>(payload[i]);
     }
@@ -246,11 +260,11 @@ void Node::setNodeType(node_type type) {
 }
 
 void Node::simulate_sending(int Modification, int Loss, int Duplication, int Delay) {
-    timer transmission_delay = par("TD").intValue();
-    timer processing_delay = par("PT").intValue();
-    timer error_delay = par("ED").intValue();
-    timer duplication_delay = par("DD").intValue();
-    timer totalTime = transmission_delay + processing_delay;
+    timing transmission_delay = par("TD").intValue();
+    timing processing_delay = par("PT").intValue();
+    timing error_delay = par("ED").intValue();
+    timing duplication_delay = par("DD").intValue();
+    timing totalTime = transmission_delay + processing_delay;
 
     if (Modification == 1) {
         totalTime += error_delay;
@@ -259,3 +273,17 @@ void Node::simulate_sending(int Modification, int Loss, int Duplication, int Del
         totalTime = processing_delay;
     }
 }
+
+std::string Node::byte_stuffing(std::string str) {
+    std::string result = "";
+    result += FLAG_BYTE;
+    for (int i = 0; i < str.size(); i++) {
+        if (str[i] == FLAG_BYTE || str[i] == ESCAPE_BYTE){
+            result += ESCAPE_BYTE;
+        }
+        result += str[i];
+    }
+    result += FLAG_BYTE;
+    return result;
+}
+

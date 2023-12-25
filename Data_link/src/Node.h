@@ -35,12 +35,31 @@ using namespace std;
  */
 class Node : public cSimpleModule {
    private:
-    // std::vector<std::vector<unsigned char>> data;
+    int WS;                                                     // Sender window size
+    int WR;                                                     // Receiver window size
+    int TO;                                                     // Timeout
+    double PT;                                                  // Processing time
+    double TD;                                                  // Transmission delay
+    double ED;                                                  // Error delay
+    double DD;                                          
     std::vector<std::string> data;
     std::vector<std::string> status;
     node_type type;
     cMessage *timerMessage;
     timing startingTime;
+    
+    seq_nr ack_expected;
+    seq_nr next_frame_to_send;
+    seq_nr frame_expected;
+    seq_nr too_far;
+    seq_nr nbuffered;
+    seq_nr i;
+    event_type event;
+    Frame_Base *r = new Frame_Base;
+    packet inbuffer[NR_BUFS];
+    packet outbuffer[NR_BUFS];
+    bool arrived[NR_BUFS];
+
     void setNodeType(node_type type);
     void setNodeStartingTime(timing startingTime);
     void initNode(node_type type, timing startingTime = 0);
@@ -62,8 +81,12 @@ class Node : public cSimpleModule {
     // virtual void disable_network_layer(void);
     // virtual void wait_for_event(event_type *event);
     virtual void send_frame(frame_kind fk, seq_nr frame_nr, seq_nr frame_expected, packet buffer[]);
-    virtual void check_sum(Frame_Base *s);
+    virtual void check_sum(Frame_Base *s, std::string payload);
     virtual void simulate_sending(int Modification, int Loss, int Duplication, int Delay);
+    virtual std::string byte_stuffing(std::string str);
+    //virtual std::string byte_destuffing(Frame_Base *s);
+    virtual Frame_Base *createFrame(Frame_Base *frame, std::string str);
+
 };
 
 #endif
