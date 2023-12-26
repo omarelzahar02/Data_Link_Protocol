@@ -16,26 +16,14 @@ void Node::initialize() {
     PT = getParentModule()->par("PT").doubleValue();
     ED = getParentModule()->par("ED").doubleValue();
     DD = getParentModule()->par("DD").doubleValue();
-    /////////////////////////////////////////////////////////////////////////////////////
-    // seq_nr ack_expected;
-    // seq_nr next_frame_to_send;
-    // seq_nr frame_expected;
-    // seq_nr too_far;
-    // seq_nr nbuffered;
-    // seq_nr i;
-    // event_type event;
-    // Frame_Base *r = new Frame_Base;
-    // packet inbuffer[NR_BUFS];
-    // packet outbuffer[NR_BUFS];
-    // bool arrived[NR_BUFS];
 
-    // enable_network_layer();
     next_frame_to_send = 0;
     ack_expected = 0;
     frame_expected = 0;
     too_far = NR_BUFS;
     nbuffered = 0;
-    seq_nr oldest_frame = 0;
+    oldest_frame = 0;
+    no_nack = true;
     for (i = 0; i < NR_BUFS; i++) {
         arrived[i] = false;
     }

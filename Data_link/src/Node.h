@@ -17,17 +17,18 @@ using namespace omnetpp;
 using namespace std;
 class Node : public cSimpleModule {
    private:
+    /*Simulation Variables*/
     int WS;     // Sender window size
     int WR;     // Receiver window size
     int TO;     // Timeout
     double PT;  // Processing time
     double TD;  // Transmission delay
     double ED;  // Error delay
-    double DD;
+    double DD;  // Duplication delay
+
     std::vector<std::string> data;
     std::vector<std::string> status;
     node_type type;
-    cMessage *timerMessage;
 
     /*Protocol Variables*/
     seq_nr next_frame_to_send;
@@ -39,7 +40,7 @@ class Node : public cSimpleModule {
     packet outbuffer[NR_BUFS];
     bool arrived[NR_BUFS];
     bool no_nack;
-    seq_nr old_frame;
+    seq_nr oldest_frame;
 
     /*Simulation Functions*/
     void setNodeType(node_type type);
@@ -65,29 +66,16 @@ class Node : public cSimpleModule {
     void send_frame(frame_kind fk, seq_nr frame_nr, seq_nr frame_expected, packet buffer[]);
     void check_sum(Frame_Base *s);
     void simulate_sending(int Modification, int Loss, int Duplication, int Delay);
+    void send_frame(frame_kind fk, seq_nr frame_nr, seq_nr frame_expected, packet buffer[]);
+    void check_sum(Frame_Base *s, string payload);
+    void simulate_sending(int Modification, int Loss, int Duplication, int Delay);
+    string byte_stuffing(string str);
+    // string byte_destuffing(Frame_Base *s);
+    Frame_Base *createFrame(Frame_Base *frame, string str);
 
    protected:
     virtual void initialize() override;
     virtual void handleMessage(cMessage *msg) override;
-    virtual void readfile();
-    virtual bool between(seq_nr a, seq_nr b, seq_nr c);
-    virtual void from_network_layer(packet *p);
-    // virtual void to_network_layer(packet *p);
-    virtual void to_physical_layer(Frame_Base *s);
-    // virtual void from_physical_layer(Frame_Base *s);
-    virtual void start_timer(seq_nr k, bool &timer_on);
-    virtual void stop_timer(seq_nr k, bool &timer_on);
-    // virtual void start_ack_timer(void);
-    // virtual void stop_ack_timer(void);
-    // virtual void enable_network_layer(void);
-    // virtual void disable_network_layer(void);
-    // virtual void wait_for_event(event_type *event);
-    virtual void send_frame(frame_kind fk, seq_nr frame_nr, seq_nr frame_expected, packet buffer[]);
-    virtual void check_sum(Frame_Base *s, std::string payload);
-    virtual void simulate_sending(int Modification, int Loss, int Duplication, int Delay);
-    virtual std::string byte_stuffing(std::string str);
-    // virtual std::string byte_destuffing(Frame_Base *s);
-    virtual Frame_Base *createFrame(Frame_Base *frame, std::string str);
 };
 
 #endif
