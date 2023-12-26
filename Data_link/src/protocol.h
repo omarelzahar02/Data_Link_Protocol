@@ -11,7 +11,10 @@
 
 #define MAX_PKT 1024
 #define MAX_SEQ 1000
-#define NR_BUFS ((MAX_SEQ + 1) / 2)
+#define RECHECK_FOR_MSGS_TIME 0.01
+#define IS_NETWORK_LAYER_READY 0
+#define TIMER_TIME_OUT 1
+
 #define inc(k)       \
     if (k < MAX_SEQ) \
         k++;         \
@@ -25,9 +28,7 @@ typedef int seq_nr;
 typedef int ack_nr;
 typedef int timing;
 
-typedef struct {
-    std::string ptext;
-} packet;
+typedef std::string Packet;
 
 typedef enum {
     DATA,
