@@ -17,7 +17,7 @@
 
 #include "./initMsg_m.h"
 #include "./protocol.h"
-#define COORDINATOR_FILE "./coordinator.txt"
+#define COORDINATOR_FILE "../src/coordinator.txt"
 using namespace std;
 Define_Module(Coordinator);
 
@@ -34,7 +34,7 @@ void Coordinator::initialize() {
         std::string line;
         while (getline(file, line)) {
             lines.push_back(line);
-            printf("%s\n", line.c_str());
+            std::cout << line << std::endl;
         }
     }
     file.close();

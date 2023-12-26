@@ -6,14 +6,14 @@ package data_link;
 //
 network Network
 {
-    // parameters:
-    //     int WS;         // Sender window size
-    //     int WR;         // Receiver window size
-    //     int TO;         // Timeout
-    //     int PT;         // Processing time
-    //     int TD;         // Transmission delay
-    //     int ED;         // Error delay
-    //     int DD;         // Duplication delay
+    parameters:
+        int WS = default(3);         // Sender window size
+        int WR = default(3);         // Receiver window size
+        int TO = default(10);         // Timeout
+        double PT = default(0.5);         // Processing time
+        double TD = default(1.0);         // Transmission delay
+        double ED = default(4.0);         // Error delay
+        double DD = default(0.1);         // Duplication delay
         @display("bgb=634,365");
     submodules:
         Node0: Node {
