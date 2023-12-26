@@ -4,4 +4,5 @@
 /Data_link/src/results
 /Data_link/simulations/run*
 /Data_link/simulations/results
+/Data_link/*.exe
 .project
