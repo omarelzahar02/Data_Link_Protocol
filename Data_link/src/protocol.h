@@ -21,9 +21,11 @@
 typedef int seq_nr;
 typedef int ack_nr;
 typedef int timing;
+
 typedef struct {
     std::string ptext;
 } packet;
+
 typedef enum {
     DATA,
     ACK,
@@ -42,7 +44,5 @@ typedef enum {
     SENDER,
     RECEIVER
 } node_type;
-static bool no_nack = true;
-static seq_nr old_frame = MAX_SEQ - 1;
 
 #endif
