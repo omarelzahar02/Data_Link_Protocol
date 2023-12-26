@@ -1,1 +1,7 @@
-/.metadata/
+.vscode
+/Data_link/out
+/Data_link/src/results
+/Data_link/src/results
+/Data_link/simulations/run*
+/Data_link/simulations/results
+.project
