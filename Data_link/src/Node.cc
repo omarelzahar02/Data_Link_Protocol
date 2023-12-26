@@ -127,7 +127,6 @@ void Node::check_for_network_layer_event(void) {
 
 void Node::enable_network_layer(void) {
     is_network_layer_enabled = true;
-    check_for_network_layer_event();
 }
 
 void Node::disable_network_layer(void) {
@@ -148,11 +147,11 @@ void Node::handleTimerTimeOut(int seqNumber) {
 void Node::handleMessage(cMessage *msg) {
     if (msg->isSelfMessage()) {
         SelfMsg_Base *received_msg = check_and_cast<SelfMsg_Base *>(msg);
-        int type = received_msg->getSelfMsgType();
-        if (type == IS_NETWORK_LAYER_READY) {
+        int mType = received_msg->getSelfMsgType();
+        if (mType == IS_NETWORK_LAYER_READY) {
             check_for_network_layer_event();
             sendSelfMsg(RECHECK_FOR_MSGS_TIME, IS_NETWORK_LAYER_READY);
-        } else if (type == TIMER_TIME_OUT) {
+        } else if (mType == TIMER_TIME_OUT) {
             handleTimerTimeOut(received_msg->getSeqNumber());
         }
         cancelAndDelete(msg);
@@ -164,17 +163,19 @@ void Node::handleMessage(cMessage *msg) {
          << "******************" << endl;
 
     bool isInitMsg = false;
-    try {
-        InitMsg_Base *received_msg = check_and_cast<InitMsg_Base *>(msg);
-        handleCoordiantionMessage(received_msg);
-        if (type == SENDER) {
-            sendSelfMsg(RECHECK_FOR_MSGS_TIME, IS_NETWORK_LAYER_READY);
+    if (isFirstTime) {
+        isFirstTime = false;
+        try {
+            InitMsg_Base *received_msg = check_and_cast<InitMsg_Base *>(msg);
+            handleCoordiantionMessage(received_msg);
+            if (type == SENDER) {
+                sendSelfMsg(RECHECK_FOR_MSGS_TIME, IS_NETWORK_LAYER_READY);
+            }
+            isInitMsg = true;
+        } catch (...) {
+            cout << "Not a configuration message" << endl;
         }
-        isInitMsg = true;
-    } catch (...) {
-        cout << "Not a configuration message" << endl;
     }
-
     if (!isInitMsg) {
         try {
             Frame_Base *received_frame = check_and_cast<Frame_Base *>(msg);
@@ -243,6 +244,11 @@ void Node::to_physical_layer(Frame_Base *frame, string simulationParams) {
     // A example call:
 
     // sendDelayed(msg, 0.005, "out");
+    EV << getName() << " : "
+       << " Type: " << frame->getM_Type()
+       << " Payload: " << frame->getM_Payload() << " SeqNum: "
+       << frame->getSeq_Num() << " Ack: " << frame->getAck()
+       << " Checksum: " << frame->getMycheckbits() << endl;
     send(frame, "outN");
 }
 

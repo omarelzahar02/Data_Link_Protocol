@@ -49,6 +49,8 @@ class Node : public cSimpleModule {
     seq_nr oldest_frame;
     bool is_network_layer_enabled;
 
+    bool isFirstTime=true;
+
     void setNodeType(node_type type);
     void handleCoordiantionMessage(InitMsg_Base *msg);
     void handleFrameMessage(Frame_Base *msg);
