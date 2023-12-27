@@ -7,11 +7,12 @@ void Node::initialize() {
 
     WS = getParentModule()->par("WS").intValue();
     WR = getParentModule()->par("WR").intValue();
-    TO = getParentModule()->par("TO").intValue();
+    TO = getParentModule()->par("TO").doubleValue();
     TD = getParentModule()->par("TD").doubleValue();
     PT = getParentModule()->par("PT").doubleValue();
     ED = getParentModule()->par("ED").doubleValue();
     DD = getParentModule()->par("DD").doubleValue();
+    wakeUpMsg = NULL;
 
     inbuffer = vector<Packet>(WS);
     outbuffer = vector<Packet>(WS);
@@ -37,13 +38,15 @@ void Node::handleCoordiantionMessage(InitMsg_Base *receivedMsg) {
 }
 
 void Node::to_network_layer(Packet *p) {
-    cout << "Network Layer Received Packet: " << p << endl;
+    // Destuffing
+    EV << "Network Layer Received Packet: " << *p << endl;
 }
 void Node::handleReceivingData(Frame_Base *received_msg) {
     /**
      * Handling checksum error
      */
     if (!is_received_data_correct(received_msg)) {
+        EV << "CheckSum Error" << endl;
         if (no_nack) {
             send_frame(NACK, 0, frame_expected, outbuffer);
         }
@@ -53,11 +56,18 @@ void Node::handleReceivingData(Frame_Base *received_msg) {
     if ((received_msg->getSeq_Num() != frame_expected) && no_nack)
         send_frame(NACK, 0, frame_expected, outbuffer);
 
+    if (between(frame_expected, received_msg->getSeq_Num(), too_far) && (arrived[received_msg->getSeq_Num() % NR_BUFS] == true)) {
+        EV << "Received duplicated frame with sequence number " << received_msg->getSeq_Num() << endl;
+    }
+
     if (between(frame_expected, received_msg->getSeq_Num(), too_far) && (arrived[received_msg->getSeq_Num() % NR_BUFS] == false)) {
+        EV << "Frame Expected " << frame_expected << " Curr Frame " << received_msg->getSeq_Num()
+           << " Too far " << too_far << endl;
         arrived[received_msg->getSeq_Num() % NR_BUFS] = true;
         inbuffer[received_msg->getSeq_Num() % NR_BUFS] = received_msg->getM_Payload();
         bool isExpectedReceived = false;
         while (arrived[frame_expected % NR_BUFS]) {
+            EV << "Cumulative Ack on sequence Number " << frame_expected << endl;
             to_network_layer(&inbuffer[frame_expected % NR_BUFS]);
             no_nack = true;
             arrived[frame_expected % NR_BUFS] = false;
@@ -66,7 +76,10 @@ void Node::handleReceivingData(Frame_Base *received_msg) {
             isExpectedReceived = true;
         }
         if (isExpectedReceived) {
+            EV << "Send Cumulative Ack" << endl;
             send_frame(ACK, 0, frame_expected, outbuffer);
+        } else {
+            EV << "Received frame within window with sequence number " << received_msg->getSeq_Num() << endl;
         }
     }
 }
@@ -74,6 +87,7 @@ void Node::handleReceivingData(Frame_Base *received_msg) {
 void Node::handleReceivingAck(Frame_Base *received_msg) {
     int lstReceived = (received_msg->getAck() + MAX_SEQ) % (MAX_SEQ + 1);
     while (between(ack_expected, lstReceived, next_frame_to_send)) {
+        EV << "Sender Acks on frame " << ack_expected << endl;
         nbuffered--;
         stop_timer(ack_expected);
         inc(ack_expected);
@@ -81,12 +95,22 @@ void Node::handleReceivingAck(Frame_Base *received_msg) {
 }
 
 void Node::handleReceivingNack(Frame_Base *received_msg) {
-    if ((received_msg->getM_Type() == NACK) && between(ack_expected, received_msg->getAck(), next_frame_to_send))
+    if ((received_msg->getM_Type() == NACK) && between(ack_expected, received_msg->getAck(), next_frame_to_send)) {
+        EV << "At time " << simTime() << " Received NACK on sequence number " << received_msg->getAck() << endl;
         send_frame(DATA, received_msg->getAck(), -1, outbuffer);
+    }
 }
 
 void Node::handleFrameMessage(Frame_Base *received_msg) {
-    cout << "Received Frame Message" << endl;
+    EV << "At time " << simTime() << " Received Frame Message" << endl;
+    EV << "Windows' pointers before processing incoming frame" << endl;
+
+    if (type == SENDER) {
+        EV << "Ack expected " << ack_expected << " Next frame to send " << next_frame_to_send << endl;
+    } else {
+        EV << "Frame expected " << frame_expected << " Too far " << too_far << endl;
+    }
+
     int frameType = received_msg->getM_Type();
     switch (frameType) {
         case DATA:
@@ -98,6 +122,13 @@ void Node::handleFrameMessage(Frame_Base *received_msg) {
             handleReceivingAck(received_msg);
             break;
     }
+    EV << "Windows' pointers after processing incoming frame" << endl;
+    if (type == SENDER) {
+        EV << "Ack expected " << ack_expected << " Next frame to send " << next_frame_to_send << endl;
+    } else {
+        EV << "Frame expected " << frame_expected << " Too far " << too_far << endl;
+    }
+
     if (nbuffered < NR_BUFS)
         enable_network_layer();
     else
@@ -106,9 +137,16 @@ void Node::handleFrameMessage(Frame_Base *received_msg) {
 
 void Node::terminate() {
     // To call finish function here
+    if (timers.size() == 0) {
+        cout << "Ending Simulation" << endl;
+        finish();
+        endSimulation();
+    }
     return;
 }
 void Node::check_for_network_layer_event(void) {
+    EV << "Lets Check" << endl;
+    EV << is_network_layer_enabled << endl;
     if (!is_network_layer_enabled) {
         return;
     }
@@ -116,21 +154,35 @@ void Node::check_for_network_layer_event(void) {
 
     bool isThereData = from_network_layer(outbuffer[next_frame_to_send % NR_BUFS], simulationParameters);
     if (!isThereData) {
-        terminate();
+        // terminate();
         return;
     }
-
     // LOGIC
     send_frame(DATA, next_frame_to_send, frame_expected, outbuffer, simulationParameters);
+    nbuffered++;
     inc(next_frame_to_send);
+
+    if (nbuffered < NR_BUFS)
+        enable_network_layer();
+    else
+        disable_network_layer();
 }
 
 void Node::enable_network_layer(void) {
     is_network_layer_enabled = true;
+    if (type == SENDER) {
+        sendSelfMsg(RECHECK_FOR_MSGS_TIME, IS_NETWORK_LAYER_READY);
+    }
 }
 
 void Node::disable_network_layer(void) {
     is_network_layer_enabled = false;
+}
+
+void Node::setNextWakeUpAfterTime(double time) {
+    if (wakeUpMsg == NULL) return;
+    cancelAndDelete(wakeUpMsg);
+    sendSelfMsg(time, IS_NETWORK_LAYER_READY);
 }
 
 void Node::sendSelfMsg(double sleepDuration, int msgType, int seqNumber) {
@@ -138,23 +190,38 @@ void Node::sendSelfMsg(double sleepDuration, int msgType, int seqNumber) {
     msg->setSelfMsgType(msgType);
     msg->setSeqNumber(seqNumber);
     scheduleAt(simTime() + sleepDuration, msg);
+    wakeUpMsg = msg;
 }
 
 void Node::handleTimerTimeOut(int seqNumber) {
+    EV << "Handling time out at sender for sequence number " << seqNumber << endl;
     send_frame(DATA, seqNumber, frame_expected, outbuffer);
+}
+
+bool Node::checkForDelayedMsgsToSend(cMessage *msg) {
+    try {
+        Frame_Base *frameToSend = check_and_cast<Frame_Base *>(msg);
+        send(frameToSend, "outN");
+        return 1;
+    } catch (...) {
+        return 0;
+    }
 }
 
 void Node::handleMessage(cMessage *msg) {
     if (msg->isSelfMessage()) {
+        if (checkForDelayedMsgsToSend(msg)) {
+            return;
+        }
         SelfMsg_Base *received_msg = check_and_cast<SelfMsg_Base *>(msg);
         int mType = received_msg->getSelfMsgType();
         if (mType == IS_NETWORK_LAYER_READY) {
             check_for_network_layer_event();
-            sendSelfMsg(RECHECK_FOR_MSGS_TIME, IS_NETWORK_LAYER_READY);
+            // sendSelfMsg(RECHECK_FOR_MSGS_TIME, IS_NETWORK_LAYER_READY);
         } else if (mType == TIMER_TIME_OUT) {
             handleTimerTimeOut(received_msg->getSeqNumber());
         }
-        cancelAndDelete(msg);
+        // cancelAndDelete(msg);
         return;
     }
 
@@ -197,9 +264,9 @@ void Node::readFile() {
     cout << getName() << " file is read" << endl;
 
     if (strcmp(getName(), "Node0") == 0)
-        file.open("../src/input0.txt");
+        file.open(INPUT_FILE_0);
     else
-        file.open("../src/input1.txt");
+        file.open(INPUT_FILE_1);
     if (!file.is_open()) {
         cerr << "Error opening file: " << strerror(errno) << endl;
     } else {
@@ -234,22 +301,95 @@ bool Node::from_network_layer(Packet &p, string &simulationParams) {
     return true;
 }
 
+string Node::modifyRandomBit(string s, int beg, int end) {
+    int size = end - beg + 1;
+    int randPos = beg + uniform(0, 1) * (double)size;
+    int addValue = uniform(1, 25);
+    s[randPos] = s[randPos] + addValue;
+    return s;
+}
+
+void Node::sendAfter(Frame_Base *frame, double delay) {
+    scheduleAt(simTime() + delay, frame);
+}
+
 void Node::to_physical_layer(Frame_Base *frame, string simulationParams) {
-    // send(s,"out");
-    // sendDelayed(cMessage *msg, double delay, const char *gateName, int index);
-    // sendDelayed(cMessage *msg, double delay, int gateId);
-    // sendDelayed(cMessage *msg, double delay, cGate *gate);
-    // The arguments are the same as for send(), except for the extra delay parameter. The delay value must be non-negative. The effect of the function is similar to as if the module had kept the message for the delay interval and sent it afterwards; even the sending time timestamp of the message will be set to the current simulation time plus delay.
+    EV << "********* To Physical Layer *********" << endl;
+    EV << "Intended Data for " << getName()
+       << "\nType: " << (frame->getM_Type() == 0 ? "DATA" : (frame->getM_Type() == 1 ? "ACK" : "NACK"))
+       << "\nPayload: " << frame->getM_Payload() << "\nSeqNum: "
+       << frame->getSeq_Num() << "\nAck: " << frame->getAck()
+       << "\nChecksum: " << frame->getMycheckbits() << endl;
 
-    // A example call:
+    double processingTime = PT;
+    double transmissionDelay = TD;
+    double simulationTime = PT + TD;
+    if (frame->getM_Type() != DATA) {
+        sendAfter(frame, simulationTime);
+        EV << "Current frame is scheduled to be send after " << simulationTime << " at " << simTime() + simulationTime << endl;
+        EV << "***************************" << endl;
+        return;
+    }
 
-    // sendDelayed(msg, 0.005, "out");
-    EV << getName() << " : "
-       << " Type: " << frame->getM_Type()
-       << " Payload: " << frame->getM_Payload() << " SeqNum: "
-       << frame->getSeq_Num() << " Ack: " << frame->getAck()
-       << " Checksum: " << frame->getMycheckbits() << endl;
-    send(frame, "outN");
+    simtime_t currSimTime = simTime();
+    static simtime_t lstProcessingFinish = 0;
+    simtime_t currProcessingFinish = currSimTime + PT;
+    if (currProcessingFinish - lstProcessingFinish < PT) {
+        currProcessingFinish = lstProcessingFinish + PT;
+    }
+
+    lstProcessingFinish = currProcessingFinish;
+
+    simtime_t processingAndWaitTime = currProcessingFinish - currSimTime;
+
+    EV << "Current node will finish processing at " << simTime() + processingAndWaitTime << endl;
+    simulationTime = transmissionDelay + processingAndWaitTime.dbl();
+
+    setNextWakeUpAfterTime(processingAndWaitTime.dbl());
+
+    bool isModification = simulationParams[0] - '0';
+    bool isLoss = simulationParams[1] - '0';
+    bool isDuplication = simulationParams[2] - '0';
+    bool isDelay = simulationParams[3] - '0';
+    if (isModification) {
+        string before = frame->getM_Payload();
+        string after = modifyRandomBit(before, 0, before.size() - 1);
+        frame->setM_Payload(after.c_str());
+        EV << "Payload is modified\nBefore: " << before
+           << "\nAfter: " << frame->getM_Payload() << endl;
+    }
+
+    string byteStuffedPayload = byte_stuffing(frame->getM_Payload());
+    frame->setM_Payload(byteStuffedPayload.c_str());
+    EV << "Frame after byte stuffing: " << byteStuffedPayload << endl;
+
+    if (isLoss) {
+        EV << "Current frame will be lost" << endl;
+        if (isDuplication) {
+            EV << "Current Duplicated frame will be lost" << endl;
+            // Printing here
+        }
+        EV << "***************************" << endl;
+        return;
+    }
+
+    if (isDelay) {
+        EV << "Current frame will be delayed" << endl;
+        simulationTime += ED;
+    }
+
+    EV << "Current frame is scheduled to be received after " << simulationTime << " at " << simTime() + simulationTime << endl;
+    sendAfter(frame, simulationTime);
+    if (isDuplication) {
+        EV << "Current frame will be duplicated" << endl;
+        simulationTime += DD;
+        EV << "Duplicated frame is scheduled to be received after " << simulationTime << " at " << simTime() + simulationTime << endl;
+        sendAfter(new Frame_Base(*frame), simulationTime);
+        EV << "***************************" << endl;
+        return;
+    }
+    EV << "***************************" << endl;
+    // send(frame, "outN");
 }
 
 void Node::start_timer(seq_nr seqNum) {
@@ -274,6 +414,7 @@ void Node::send_frame(frame_kind fk, seq_nr frame_nr, seq_nr frame_expected, vec
     Frame_Base *frame;
     if (fk == DATA) {
         frame = create_frame(buffer[frame_nr % NR_BUFS], frame_nr);
+        start_timer(frame_nr);
     } else {
         frame = new Frame_Base("");
         frame->setM_Type(fk);
@@ -292,8 +433,7 @@ Frame_Base *Node::create_frame(string payload, seq_nr frame_nr) {
     bitset<8> checkSum = check_sum(payload);
     frame->setMycheckbits(checkSum);
 
-    string byteStuffedPayload = byte_stuffing(payload);
-    frame->setM_Payload(byteStuffedPayload.c_str());
+    frame->setM_Payload(payload.c_str());
     frame->setSeq_Num(frame_nr);
     // frame->setAck((frame_expected + MAX_SEQ) % (MAX_SEQ + 1));
     frame->setM_Type(DATA);

@@ -9,7 +9,7 @@ network Network
     parameters:
         int WS = default(3);         // Sender window size
         int WR = default(3);         // Receiver window size
-        int TO = default(10);         // Timeout
+        double TO = default(10);         // Timeout
         double PT = default(0.5);         // Processing time
         double TD = default(1.0);         // Transmission delay
         double ED = default(4.0);         // Error delay

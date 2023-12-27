@@ -25,7 +25,7 @@ class Node : public cSimpleModule {
     int NR_BUFS;
     int WS;     // Sender window size
     int WR;     // Receiver window size
-    int TO;     // Timeout
+    double TO;  // Timeout
     double PT;  // Processing time
     double TD;  // Transmission delay
     double ED;  // Error delay
@@ -34,7 +34,7 @@ class Node : public cSimpleModule {
     queue<string> data;
     queue<string> status;
     node_type type;
-
+    SelfMsg_Base *wakeUpMsg;
     /*Protocol Variables*/
     unordered_map<seq_nr, cMessage *> timers;
     seq_nr next_frame_to_send;
@@ -49,7 +49,7 @@ class Node : public cSimpleModule {
     seq_nr oldest_frame;
     bool is_network_layer_enabled;
 
-    bool isFirstTime=true;
+    bool isFirstTime = true;
 
     void setNodeType(node_type type);
     void handleCoordiantionMessage(InitMsg_Base *msg);
@@ -68,12 +68,16 @@ class Node : public cSimpleModule {
     bool between(seq_nr a, seq_nr b, seq_nr c);
     bool from_network_layer(Packet &p, string &simulationParams);
     void to_network_layer(Packet *p);
-    void to_physical_layer(Frame_Base *frame, string simulationParams = "");
+    void to_physical_layer(Frame_Base *frame, string simulationParams = "0000");
+    void setNextWakeUpAfterTime(double time);
+    string modifyRandomBit(string s, int beg, int end);
     void start_timer(seq_nr seqNum);
     void stop_timer(seq_nr seqNum);
     void enable_network_layer(void);
     void disable_network_layer(void);
-    void send_frame(frame_kind fk, seq_nr frame_nr, seq_nr frame_expected, vector<Packet> &buffer, string simulationParams = "");
+    bool checkForDelayedMsgsToSend(cMessage *msg);
+    void sendAfter(Frame_Base *frame, double delay);
+    void send_frame(frame_kind fk, seq_nr frame_nr, seq_nr frame_expected, vector<Packet> &buffer, string simulationParams = "0000");
     bitset<8> check_sum(string payload);
     void simulate_sending(int Modification, int Loss, int Duplication, int Delay);
     string byte_stuffing(string str);
