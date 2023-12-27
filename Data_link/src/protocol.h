@@ -14,8 +14,8 @@
 #define RECHECK_FOR_MSGS_TIME 0.05
 #define IS_NETWORK_LAYER_READY 0
 #define TIMER_TIME_OUT 1
-#define INPUT_FILE_0 "../src/input2.txt"
-#define INPUT_FILE_1 "../src/input0.txt"
+#define INPUT_FILE_0 "../src/node2.txt"
+#define INPUT_FILE_1 "../src/node1.txt"
 #define OUTPUT_FILE "../src/output.txt"
 
 #define inc(k)       \

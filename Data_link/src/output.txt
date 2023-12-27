@@ -1,0 +1,122 @@
+At Time 1, Node1 Introducing channel error with code = 0000
+At Time 1.5, Node1[sender][sent] frame with seq_num = 0 and payload=#aaaa# and trailer=00000000, Modified=-1, Lost=NO, Duplicate=0, Delay=0
+
+At Time 1.5, Node1 Introducing channel error with code = 0000
+At Time 2, Node1[sender][sent] frame with seq_num = 1 and payload=#/#bbbb/## and trailer=00000000, Modified=-1, Lost=NO, Duplicate=0, Delay=0
+
+At Time 2, Node1 Introducing channel error with code = 0000
+At Time 2.5, Node1[sender][sent] frame with seq_num = 2 and payload=#ccc//c# and trailer=00101111, Modified=-1, Lost=NO, Duplicate=0, Delay=0
+
+At Time 2.5, Node0[reciever][recieved] frame with seq_num = 0 and payload=#aaaa# and trailer=00000000, Modified=-1, Duplicate=0
+
+At Time 3, Node0 Sending ACK with number = 1, Loss No
+At Time 3, Node0[reciever][recieved] frame with seq_num = 1 and payload=#/#bbbb/## and trailer=00000000, Modified=-1, Duplicate=0
+
+At Time 3.5, Node0 Sending ACK with number = 2, Loss No
+At Time 3.5, Node0[reciever][recieved] frame with seq_num = 2 and payload=#ccc//c# and trailer=00101111, Modified=-1, Duplicate=0
+
+At Time 4, Node0 Sending ACK with number = 3, Loss No
+At Time 4, Node1 Introducing channel error with code = 1000
+At Time 4.5, Node1[sender][sent] frame with seq_num = 3 and payload=#m~d# and trailer=01100110, Modified=1, Lost=NO, Duplicate=0, Delay=0
+
+At Time 4.5, Node1 Introducing channel error with code = 0100
+At Time 5, Node1 Introducing channel error with code = 0000
+At Time 5.5, Node1[sender][sent] frame with seq_num = 5 and payload=#cc# and trailer=00000000, Modified=-1, Lost=NO, Duplicate=0, Delay=0
+
+At Time 5.5, Node0[reciever][recieved] frame with seq_num = 3 and payload=#m~d# and trailer=01100110, Modified=yes, Duplicate=0
+
+At Time 6, Node0 Sending NACK with number = 3, Loss No
+At Time 6.5, Node0[reciever][recieved] frame with seq_num = 5 and payload=#cc# and trailer=00000000, Modified=-1, Duplicate=0
+
+At Time 7, Node1 Introducing channel error with code = 0000
+At Time 7.5, Node1[sender][sent] frame with seq_num = 3 and payload=#mod# and trailer=01100110, Modified=-1, Lost=NO, Duplicate=0, Delay=0
+
+At Time 8.5, Node0[reciever][recieved] frame with seq_num = 3 and payload=#mod# and trailer=01100110, Modified=-1, Duplicate=0
+
+At Time 9, Node0 Sending ACK with number = 4, Loss No
+At Time 10, Node1 Introducing channel error with code = 0001
+At Time 10.5, Node1[sender][sent] frame with seq_num = 6 and payload=#delay# and trailer=01110101, Modified=-1, Lost=NO, Duplicate=0, Delay=4
+
+At Time 14.5, Node1 Introducing channel error with code = 0000
+At Time 15, Node1[sender][sent] frame with seq_num = 4 and payload=#lost# and trailer=00000100, Modified=-1, Lost=NO, Duplicate=0, Delay=0
+
+Time out event at time 14.5,at Node1 for frame with seq_num = 4
+At Time 15, Node1 Introducing channel error with code = 0000
+At Time 15.5, Node1[sender][sent] frame with seq_num = 5 and payload=#cc# and trailer=00000000, Modified=-1, Lost=NO, Duplicate=0, Delay=0
+
+Time out event at time 15,at Node1 for frame with seq_num = 5
+At Time 15.5, Node0[reciever][recieved] frame with seq_num = 6 and payload=#delay# and trailer=01110101, Modified=-1, Duplicate=0
+
+At Time 16, Node0 Sending NACK with number = 4, Loss Yes
+At Time 16, Node0[reciever][recieved] frame with seq_num = 4 and payload=#lost# and trailer=00000100, Modified=-1, Duplicate=0
+
+At Time 16.5, Node0 Sending ACK with number = 5, Loss No
+At Time 16.5, Node0 Sending ACK with number = 6, Loss No
+At Time 16.5, Node0 Sending ACK with number = 7, Loss No
+At Time 16.5, Node0[reciever][recieved] frame with seq_num = 5 and payload=#cc# and trailer=00000000, Modified=-1, Duplicate=0
+
+At Time 17, Node0 Sending NACK with number = 7, Loss Yes
+At Time 17, Node1 Introducing channel error with code = 0000
+At Time 17.5, Node1[sender][sent] frame with seq_num = 4 and payload=#lost# and trailer=00000100, Modified=-1, Lost=NO, Duplicate=0, Delay=0
+
+At Time 17.5, Node1 Introducing channel error with code = 0110
+At Time 18, Node1 Introducing channel error with code = 1010
+At Time 18.5, Node1[sender][sent] frame with seq_num = 8 and payload=#dupm„d# and trailer=00000111, Modified=4, Lost=NO, Duplicate=1, Delay=0
+
+At Time 18.6, Node1[sender][sent] frame with seq_num = 8 and payload=#dupm„d# and trailer=00000111, Modified=4, Lost=NO, Duplicate=2, Delay=0
+
+At Time 18, Node1 Introducing channel error with code = 0000
+At Time 18.5, Node1[sender][sent] frame with seq_num = 7 and payload=#duplost# and trailer=01100101, Modified=-1, Lost=NO, Duplicate=0, Delay=0
+
+At Time 18.5, Node0[reciever][recieved] frame with seq_num = 4 and payload=#lost# and trailer=00000100, Modified=-1, Duplicate=0
+
+At Time 19, Node1 Introducing channel error with code = 0010
+At Time 19.5, Node1[sender][sent] frame with seq_num = 9 and payload=#dup# and trailer=01100001, Modified=-1, Lost=NO, Duplicate=1, Delay=0
+
+At Time 19.6, Node1[sender][sent] frame with seq_num = 9 and payload=#dup# and trailer=01100001, Modified=-1, Lost=NO, Duplicate=2, Delay=0
+
+At Time 19.5, Node0[reciever][recieved] frame with seq_num = 8 and payload=#dupm„d# and trailer=00000111, Modified=yes, Duplicate=0
+
+At Time 19.6, Node0[reciever][recieved] frame with seq_num = 8 and payload=#dupm„d# and trailer=00000111, Modified=yes, Duplicate=0
+
+At Time 20, Node0[reciever][recieved] frame with seq_num = 7 and payload=#duplost# and trailer=01100101, Modified=-1, Duplicate=0
+
+At Time 20.5, Node0 Sending ACK with number = 8, Loss No
+At Time 20.5, Node0[reciever][recieved] frame with seq_num = 9 and payload=#dup# and trailer=01100001, Modified=-1, Duplicate=0
+
+At Time 21, Node0 Sending NACK with number = 8, Loss Yes
+At Time 20.6, Node0[reciever][recieved] frame with seq_num = 9 and payload=#dup# and trailer=01100001, Modified=-1, Duplicate=1
+
+At Time 20.6, Node0[reciever][recieved] frame with seq_num = 9 and payload=#dup# and trailer=01100001, Modified=-1, Duplicate=0
+
+At Time 21.5, Node1 Introducing channel error with code = 0100
+At Time 22, Node1 Introducing channel error with code = 0000
+At Time 22.5, Node1[sender][sent] frame with seq_num = 8 and payload=#dupmod# and trailer=00000111, Modified=-1, Lost=NO, Duplicate=0, Delay=0
+
+At Time 23.5, Node0[reciever][recieved] frame with seq_num = 8 and payload=#dupmod# and trailer=00000111, Modified=-1, Duplicate=0
+
+At Time 24, Node0 Sending ACK with number = 9, Loss No
+At Time 24, Node0 Sending ACK with number = 10, Loss No
+At Time 25, Node1 Introducing channel error with code = 0100
+At Time 25.5, Node1 Introducing channel error with code = 0100
+At Time 31.5, Node1 Introducing channel error with code = 0000
+At Time 32, Node1[sender][sent] frame with seq_num = 10 and payload=#lostA# and trailer=01000101, Modified=-1, Lost=NO, Duplicate=0, Delay=0
+
+Time out event at time 31.5,at Node1 for frame with seq_num = 10
+At Time 33, Node0[reciever][recieved] frame with seq_num = 10 and payload=#lostA# and trailer=01000101, Modified=-1, Duplicate=0
+
+At Time 33.5, Node0 Sending ACK with number = 11, Loss No
+At Time 35, Node1 Introducing channel error with code = 0000
+At Time 35.5, Node1[sender][sent] frame with seq_num = 11 and payload=#lostB# and trailer=01000110, Modified=-1, Lost=NO, Duplicate=0, Delay=0
+
+Time out event at time 35,at Node1 for frame with seq_num = 11
+At Time 35.5, Node1 Introducing channel error with code = 0000
+At Time 36, Node1[sender][sent] frame with seq_num = 12 and payload=#lostC# and trailer=01000111, Modified=-1, Lost=NO, Duplicate=0, Delay=0
+
+Time out event at time 35.5,at Node1 for frame with seq_num = 12
+At Time 36.5, Node0[reciever][recieved] frame with seq_num = 11 and payload=#lostB# and trailer=01000110, Modified=-1, Duplicate=0
+
+At Time 37, Node0 Sending ACK with number = 12, Loss No
+At Time 37, Node0[reciever][recieved] frame with seq_num = 12 and payload=#lostC# and trailer=01000111, Modified=-1, Duplicate=0
+
+At Time 37.5, Node0 Sending ACK with number = 13, Loss No

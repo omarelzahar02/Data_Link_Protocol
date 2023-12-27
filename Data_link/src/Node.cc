@@ -50,24 +50,28 @@ void Node::handleReceivingData(Frame_Base *received_msg) {
     received_msg->setM_Payload(deStuffedPayload.c_str());
 
     if (!is_received_data_correct(received_msg)) {
+        writeRecievedToOutputFile(received_msg,true,0,receivedPayload);
         EV << "CheckSum Error" << endl;
         if (no_nack) {
             send_frame(NACK, 0, frame_expected, outbuffer);
-            writeNackToOutputFile(frame_expected, true);
+            writeNackToOutputFile(frame_expected, false);
         }
         return;
     }
+    
+    if (between(frame_expected, received_msg->getSeq_Num(), too_far) && (arrived[received_msg->getSeq_Num() % NR_BUFS] == true)) {
+        writeRecievedToOutputFile(received_msg,false,1,receivedPayload);
+        EV << "Received duplicated frame with sequence number " << received_msg->getSeq_Num() << endl;
+    }
+    writeRecievedToOutputFile(received_msg,false,0,receivedPayload);
 
     if ((received_msg->getSeq_Num() != frame_expected) && no_nack)
     {
         send_frame(NACK, 0, frame_expected, outbuffer);
-        writeNackToOutputFile(frame_expected, false);
+        writeNackToOutputFile(frame_expected, true);
     }
 
-    if (between(frame_expected, received_msg->getSeq_Num(), too_far) && (arrived[received_msg->getSeq_Num() % NR_BUFS] == true)) {
-        EV << "Received duplicated frame with sequence number " << received_msg->getSeq_Num() << endl;
-    }
-
+    
     if (between(frame_expected, received_msg->getSeq_Num(), too_far) && (arrived[received_msg->getSeq_Num() % NR_BUFS] == false)) {
         EV << "Frame Expected " << frame_expected << " Curr Frame " << received_msg->getSeq_Num()
            << " Too far " << too_far << endl;
@@ -76,11 +80,11 @@ void Node::handleReceivingData(Frame_Base *received_msg) {
         bool isExpectedReceived = false;
         while (arrived[frame_expected % NR_BUFS]) {
             EV << "Cumulative Ack on sequence Number " << frame_expected << endl;
-            writeAckToOutputFile(frame_expected);
             to_network_layer(&inbuffer[frame_expected % NR_BUFS]);
             no_nack = true;
             arrived[frame_expected % NR_BUFS] = false;
             inc(frame_expected);
+            writeAckToOutputFile(frame_expected);
             inc(too_far);
             isExpectedReceived = true;
         }
@@ -221,7 +225,6 @@ void Node::handleMessage(cMessage *msg) {
         if (checkForDelayedMsgsToSend(msg)) {
             return;
         }
-        
         SelfMsg_Base *received_msg = check_and_cast<SelfMsg_Base *>(msg);
         int mType = received_msg->getSelfMsgType();
         if (mType == IS_NETWORK_LAYER_READY) {
@@ -309,9 +312,9 @@ bool Node::from_network_layer(Packet &p, string &simulationParams) {
     return true;
 }
 
-string Node::modifyRandomBit(string s, int beg, int end) {
+string Node::modifyRandomBit(string s, int beg, int end, int &randPos) {
     int size = end - beg + 1;
-    int randPos = beg + uniform(0, 1) * (double)size;
+    randPos = beg + uniform(0, 1) * (double)size;
     int addValue = uniform(1, 25);
     s[randPos] = s[randPos] + addValue;
     return s;
@@ -321,11 +324,7 @@ void Node::sendAfter(Frame_Base *frame, double delay) {
     scheduleAt(simTime() + delay, frame);
 }
 
-void Node::printAfter(double delay,seq_nr frame_nr) {
-    scheduleAt(simTime() + delay,frame_nr);
-}
-
-void Node::to_physical_layer(Frame_Base *frame, string simulationParams,seq_nr frame_nr) {
+void Node::to_physical_layer(Frame_Base *frame, string simulationParams) {
     EV << "********* To Physical Layer *********" << endl;
     EV << "Intended Data for " << getName()
        << "\nType: " << (frame->getM_Type() == 0 ? "DATA" : (frame->getM_Type() == 1 ? "ACK" : "NACK"))
@@ -363,9 +362,10 @@ void Node::to_physical_layer(Frame_Base *frame, string simulationParams,seq_nr f
     bool isLoss = simulationParams[1] - '0';
     bool isDuplication = simulationParams[2] - '0';
     bool isDelay = simulationParams[3] - '0';
+    int modified = -1;
     if (isModification) {
         string before = frame->getM_Payload();
-        string after = modifyRandomBit(before, 0, before.size() - 1);
+        string after = modifyRandomBit(before, 0, before.size() - 1, modified);
         frame->setM_Payload(after.c_str());
         EV << "Payload is modified\nBefore: " << before
            << "\nAfter: " << frame->getM_Payload() << endl;
@@ -392,14 +392,17 @@ void Node::to_physical_layer(Frame_Base *frame, string simulationParams,seq_nr f
 
     EV << "Current frame is scheduled to be received after " << simulationTime << " at " << simTime() + simulationTime << endl;
     sendAfter(frame, simulationTime);
+    writeTransmitionToOutputFile(frame, modified,isLoss, isDuplication, isDelay);
     if (isDuplication) {
         EV << "Current frame will be duplicated" << endl;
         simulationTime += DD;
         EV << "Duplicated frame is scheduled to be received after " << simulationTime << " at " << simTime() + simulationTime << endl;
+        writeTransmitionToOutputFile(frame, modified, isLoss, 2, isDelay);
         sendAfter(new Frame_Base(*frame), simulationTime);
         EV << "***************************" << endl;
         return;
     }
+    
     EV << "***************************" << endl;
     // send(frame, "outN");
 }
@@ -436,7 +439,7 @@ void Node::send_frame(frame_kind fk, seq_nr frame_nr, seq_nr frame_expected, vec
         }
     }
 
-    to_physical_layer(frame, simulationParams,frame_nr);//added frame_nr
+    to_physical_layer(frame, simulationParams);//added frame_nr
 }
 
 Frame_Base *Node::create_frame(string payload, seq_nr frame_nr) {
@@ -547,7 +550,8 @@ void Node::writeStartingToOutputFile(Frame_Base *frame, string simulationParams)
     }
     file.close();
 }
-void Node::writeTransmitionToOutputFile(Frame_Base *frame, string simulationParams) {
+
+void Node::writeTransmitionToOutputFile(Frame_Base *frame, int modified, bool lost, int duplicate, bool delay) {
     if(type == RECEIVER  || frame->getM_Type() != DATA) return;
     ofstream file;
     file.open(OUTPUT_FILE, ios::out | ios::app);
@@ -555,7 +559,23 @@ void Node::writeTransmitionToOutputFile(Frame_Base *frame, string simulationPara
     if (!file.is_open()) {
         cerr << "Error opening file: " << strerror(errno) << endl;
     } else {
-        file << "At Time " << simTime() << ", " << getName() << " Introducing channel error with code = " << simulationParams << endl;
+        file << "At Time " << (duplicate == 2? simTime() + PT + DD:simTime() + PT) << ", " << getName() << "[sender][sent] frame with seq_num = " << frame->getSeq_Num() <<
+        " and payload=" << frame->getM_Payload() << " and trailer=" << frame->getMycheckbits() << ", Modified="
+        << modified << ", Lost=" << (lost? "YES": "NO") << ", Duplicate=" << duplicate << ", Delay=" << (delay? ED:0) << endl << endl;
+    }
+    file.close();
+}
+void Node::writeRecievedToOutputFile(Frame_Base *frame, bool modified, int duplicate, string payload) {
+    if(type == SENDER  || frame->getM_Type() != DATA) return;
+    ofstream file;
+    file.open(OUTPUT_FILE, ios::out | ios::app);
+    
+    if (!file.is_open()) {
+        cerr << "Error opening file: " << strerror(errno) << endl;
+    } else {
+        file << "At Time " << simTime() << ", " << getName() << "[reciever][recieved] frame with seq_num = " << frame->getSeq_Num() <<
+             " and payload=" << payload << " and trailer=" << frame->getMycheckbits() << ", Modified="
+             << (modified? "yes":"-1") << ", Duplicate=" << duplicate << endl << endl;
     }
     file.close();
 }
@@ -598,7 +618,7 @@ void Node::writeNackToOutputFile(seq_nr seqNum, bool isLoss) {
     if (!file.is_open()) {
         cerr << "Error opening file: " << strerror(errno) << endl;
     } else {
-        file << "At Time " << simTime() + PT << ", " << getName() << " Sending NACK with number = " 
+        file << "At Time " << simTime() + PT << ", " << getName() << " Sending NACK with number = "
             << seqNum << ", Loss " << (isLoss == 1 ? "Yes" : "No") <<endl;
     }
     file.close();

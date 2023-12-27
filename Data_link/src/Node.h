@@ -74,7 +74,7 @@ class Node : public cSimpleModule {
     void to_network_layer(Packet *p);
     void to_physical_layer(Frame_Base *frame, string simulationParams = "0000");
     void setNextWakeUpAfterTime(double time);
-    string modifyRandomBit(string s, int beg, int end);
+    string modifyRandomBit(string s, int beg, int end, int &randPos);
     void start_timer(seq_nr seqNum);
     void stop_timer(seq_nr seqNum);
     void enable_network_layer(void);
@@ -89,7 +89,9 @@ class Node : public cSimpleModule {
     Frame_Base *create_frame(string payload, seq_nr frame_nr);
     void clearFile(const std::string& filename);
     void writeStartingToOutputFile(Frame_Base *frame, string simulationParams = "0000");
-    void writeTransmitToOutputFile(Frame_Base *frame, string simulationParams = "0000");
+//    void writeTransmitToOutputFile(Frame_Base *frame, string simulationParams = "0000");
+    void writeTransmitionToOutputFile(Frame_Base *frame, int modified, bool lost, int duplicate, bool delay);
+    void writeRecievedToOutputFile(Frame_Base *frame, bool modified, int duplicate, string payload);
     void writeToTimeOutFile(seq_nr seqNum);
     void writeAckToOutputFile(seq_nr seqNum);
     void writeNackToOutputFile(seq_nr seqNum, bool isLoss);
