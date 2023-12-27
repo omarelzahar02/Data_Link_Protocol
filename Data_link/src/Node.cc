@@ -221,6 +221,7 @@ void Node::handleMessage(cMessage *msg) {
         if (checkForDelayedMsgsToSend(msg)) {
             return;
         }
+        
         SelfMsg_Base *received_msg = check_and_cast<SelfMsg_Base *>(msg);
         int mType = received_msg->getSelfMsgType();
         if (mType == IS_NETWORK_LAYER_READY) {
@@ -320,7 +321,11 @@ void Node::sendAfter(Frame_Base *frame, double delay) {
     scheduleAt(simTime() + delay, frame);
 }
 
-void Node::to_physical_layer(Frame_Base *frame, string simulationParams) {
+void Node::printAfter(double delay,seq_nr frame_nr) {
+    scheduleAt(simTime() + delay,frame_nr);
+}
+
+void Node::to_physical_layer(Frame_Base *frame, string simulationParams,seq_nr frame_nr) {
     EV << "********* To Physical Layer *********" << endl;
     EV << "Intended Data for " << getName()
        << "\nType: " << (frame->getM_Type() == 0 ? "DATA" : (frame->getM_Type() == 1 ? "ACK" : "NACK"))
@@ -431,7 +436,7 @@ void Node::send_frame(frame_kind fk, seq_nr frame_nr, seq_nr frame_expected, vec
         }
     }
 
-    to_physical_layer(frame, simulationParams);
+    to_physical_layer(frame, simulationParams,frame_nr);//added frame_nr
 }
 
 Frame_Base *Node::create_frame(string payload, seq_nr frame_nr) {
@@ -531,6 +536,18 @@ void Node::clearFile(const std::string& filename) {
     file.close();
 }
 void Node::writeStartingToOutputFile(Frame_Base *frame, string simulationParams) {
+    if(type == RECEIVER  || frame->getM_Type() != DATA) return;
+    ofstream file;
+    file.open(OUTPUT_FILE, ios::out | ios::app);
+
+    if (!file.is_open()) {
+        cerr << "Error opening file: " << strerror(errno) << endl;
+    } else {
+        file << "At Time " << simTime() << ", " << getName() << " Introducing channel error with code = " << simulationParams << endl;
+    }
+    file.close();
+}
+void Node::writeTransmitionToOutputFile(Frame_Base *frame, string simulationParams) {
     if(type == RECEIVER  || frame->getM_Type() != DATA) return;
     ofstream file;
     file.open(OUTPUT_FILE, ios::out | ios::app);

@@ -20,6 +20,8 @@
 using namespace omnetpp;
 using namespace std;
 class Node : public cSimpleModule {
+    //public:
+    //bool timeToPrint = false;
    private:
     /*Simulation Variables*/
     int NR_BUFS;

@@ -6,3 +6,6 @@
 /Data_link/simulations/results
 /Data_link/*.exe
 .project
+/.metadata/
+/Data_link/.metadata/
+/Data_link/.metadata/.settings/
