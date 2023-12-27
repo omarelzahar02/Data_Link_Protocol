@@ -85,6 +85,12 @@ class Node : public cSimpleModule {
     string byte_stuffing(string str);
     string byte_destuffing(string str);
     Frame_Base *create_frame(string payload, seq_nr frame_nr);
+    void clearFile(const std::string& filename);
+    void writeStartingToOutputFile(Frame_Base *frame, string simulationParams = "0000");
+    void writeTransmitToOutputFile(Frame_Base *frame, string simulationParams = "0000");
+    void writeToTimeOutFile(seq_nr seqNum);
+    void writeAckToOutputFile(seq_nr seqNum);
+    void writeNackToOutputFile(seq_nr seqNum, bool isLoss);
 
    protected:
     virtual void initialize() override;

@@ -3,6 +3,7 @@
 Define_Module(Node);
 
 void Node::initialize() {
+    clearFile(OUTPUT_FILE);
     readFile();
 
     WS = getParentModule()->par("WS").intValue();
@@ -52,12 +53,16 @@ void Node::handleReceivingData(Frame_Base *received_msg) {
         EV << "CheckSum Error" << endl;
         if (no_nack) {
             send_frame(NACK, 0, frame_expected, outbuffer);
+            writeNackToOutputFile(frame_expected, true);
         }
         return;
     }
 
     if ((received_msg->getSeq_Num() != frame_expected) && no_nack)
+    {
         send_frame(NACK, 0, frame_expected, outbuffer);
+        writeNackToOutputFile(frame_expected, false);
+    }
 
     if (between(frame_expected, received_msg->getSeq_Num(), too_far) && (arrived[received_msg->getSeq_Num() % NR_BUFS] == true)) {
         EV << "Received duplicated frame with sequence number " << received_msg->getSeq_Num() << endl;
@@ -71,6 +76,7 @@ void Node::handleReceivingData(Frame_Base *received_msg) {
         bool isExpectedReceived = false;
         while (arrived[frame_expected % NR_BUFS]) {
             EV << "Cumulative Ack on sequence Number " << frame_expected << endl;
+            writeAckToOutputFile(frame_expected);
             to_network_layer(&inbuffer[frame_expected % NR_BUFS]);
             no_nack = true;
             arrived[frame_expected % NR_BUFS] = false;
@@ -197,6 +203,7 @@ void Node::sendSelfMsg(double sleepDuration, int msgType, int seqNumber) {
 void Node::handleTimerTimeOut(int seqNumber) {
     EV << "Handling time out at sender for sequence number " << seqNumber << endl;
     send_frame(DATA, seqNumber, frame_expected, outbuffer);
+    writeToTimeOutFile(seqNumber);
 }
 
 bool Node::checkForDelayedMsgsToSend(cMessage *msg) {
@@ -320,7 +327,7 @@ void Node::to_physical_layer(Frame_Base *frame, string simulationParams) {
        << "\nPayload: " << frame->getM_Payload() << "\nSeqNum: "
        << frame->getSeq_Num() << "\nAck: " << frame->getAck()
        << "\nChecksum: " << frame->getMycheckbits() << endl;
-
+    // writeAckToOutputFile(frame);
     double processingTime = PT;
     double transmissionDelay = TD;
     double simulationTime = PT + TD;
@@ -342,6 +349,7 @@ void Node::to_physical_layer(Frame_Base *frame, string simulationParams) {
     simtime_t processingAndWaitTime = currProcessingFinish - currSimTime;
 
     EV << "Current node will finish processing at " << simTime() + processingAndWaitTime << endl;
+    writeStartingToOutputFile(frame, simulationParams);
     simulationTime = transmissionDelay + processingAndWaitTime.dbl();
 
     setNextWakeUpAfterTime(processingAndWaitTime.dbl());
@@ -514,4 +522,67 @@ string Node::byte_destuffing(string str) {
         result += str[i];
     }
     return result;
+}
+
+
+void Node::clearFile(const std::string& filename) {
+    std::ofstream file;
+    file.open(filename, std::ios::out | std::ios::trunc);
+    file.close();
+}
+void Node::writeStartingToOutputFile(Frame_Base *frame, string simulationParams) {
+    if(type == RECEIVER  || frame->getM_Type() != DATA) return;
+    ofstream file;
+    file.open(OUTPUT_FILE, ios::out | ios::app);
+
+    if (!file.is_open()) {
+        cerr << "Error opening file: " << strerror(errno) << endl;
+    } else {
+        file << "At Time " << simTime() << ", " << getName() << " Introducing channel error with code = " << simulationParams << endl;
+    }
+    file.close();
+}
+
+void Node::writeToTimeOutFile(int seqNumber) {
+    ofstream file;
+    file.open(OUTPUT_FILE, ios::out | ios::app);
+
+    if (!file.is_open()) {
+        cerr << "Error opening file: " << strerror(errno) << endl;
+    } else {
+        file << "Time out event at time " << simTime() << ",at " << getName() << " for frame with seq_num = " << seqNumber << endl;
+    } 
+    file.close();
+}
+
+void Node::writeAckToOutputFile(seq_nr seqNum) {
+    if(type == SENDER) return;
+    ofstream file;
+    file.open(OUTPUT_FILE, ios::out | ios::app);
+    
+    //bool isLoss = simulationParams[1] - '0';
+
+    // loss need to be handeled
+
+    if (!file.is_open()) {
+        cerr << "Error opening file: " << strerror(errno) << endl;
+    } else {
+        file << "At Time " << simTime() + PT << ", " << getName() << " Sending ACK with number = " 
+            << seqNum << ", Loss " << "No" <<endl;
+    }
+    file.close();
+}
+
+void Node::writeNackToOutputFile(seq_nr seqNum, bool isLoss) {
+    if(type == SENDER) return;
+    ofstream file;
+    file.open(OUTPUT_FILE, ios::out | ios::app);
+    
+    if (!file.is_open()) {
+        cerr << "Error opening file: " << strerror(errno) << endl;
+    } else {
+        file << "At Time " << simTime() + PT << ", " << getName() << " Sending NACK with number = " 
+            << seqNum << ", Loss " << (isLoss == 1 ? "Yes" : "No") <<endl;
+    }
+    file.close();
 }
