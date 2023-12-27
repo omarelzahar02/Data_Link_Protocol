@@ -50,7 +50,7 @@ void Node::handleReceivingData(Frame_Base *received_msg) {
     received_msg->setM_Payload(deStuffedPayload.c_str());
 
     if (!is_received_data_correct(received_msg)) {
-        writeRecievedToOutputFile(received_msg,true,0,receivedPayload);
+        writeRecievedToOutputFile(received_msg, true, 0, receivedPayload);
         EV << "CheckSum Error" << endl;
         if (no_nack) {
             send_frame(NACK, 0, frame_expected, outbuffer);
@@ -58,20 +58,18 @@ void Node::handleReceivingData(Frame_Base *received_msg) {
         }
         return;
     }
-    
+
     if (between(frame_expected, received_msg->getSeq_Num(), too_far) && (arrived[received_msg->getSeq_Num() % NR_BUFS] == true)) {
-        writeRecievedToOutputFile(received_msg,false,1,receivedPayload);
+        writeRecievedToOutputFile(received_msg, false, 1, receivedPayload);
         EV << "Received duplicated frame with sequence number " << received_msg->getSeq_Num() << endl;
     }
-    writeRecievedToOutputFile(received_msg,false,0,receivedPayload);
+    writeRecievedToOutputFile(received_msg, false, 0, receivedPayload);
 
-    if ((received_msg->getSeq_Num() != frame_expected) && no_nack)
-    {
+    if ((received_msg->getSeq_Num() != frame_expected) && no_nack) {
         send_frame(NACK, 0, frame_expected, outbuffer);
         writeNackToOutputFile(frame_expected, true);
     }
 
-    
     if (between(frame_expected, received_msg->getSeq_Num(), too_far) && (arrived[received_msg->getSeq_Num() % NR_BUFS] == false)) {
         EV << "Frame Expected " << frame_expected << " Curr Frame " << received_msg->getSeq_Num()
            << " Too far " << too_far << endl;
@@ -210,6 +208,19 @@ void Node::handleTimerTimeOut(int seqNumber) {
     writeToTimeOutFile(seqNumber);
 }
 
+bool Node::checkForProcessingFinishToDisplay(cMessage *msg) {
+    string response = msg->getName();
+    const string scheduledIdentifier = "scheduled";
+    int scheduledIdentifierSize = scheduledIdentifier.size();
+    if (response.size() >= scheduledIdentifierSize && response.substr(0, scheduledIdentifierSize) == scheduledIdentifier) {
+        string printToFileProcessingFinished = response.substr(9);
+        writeStringToFile(printToFileProcessingFinished);
+        cancelAndDelete(msg);
+        return 1;
+    }
+    return 0;
+}
+
 bool Node::checkForDelayedMsgsToSend(cMessage *msg) {
     try {
         Frame_Base *frameToSend = check_and_cast<Frame_Base *>(msg);
@@ -222,7 +233,9 @@ bool Node::checkForDelayedMsgsToSend(cMessage *msg) {
 
 void Node::handleMessage(cMessage *msg) {
     if (msg->isSelfMessage()) {
-        if (checkForDelayedMsgsToSend(msg)) {
+        if (checkForProcessingFinishToDisplay(msg)) {
+            return;
+        } else if (checkForDelayedMsgsToSend(msg)) {
             return;
         }
         SelfMsg_Base *received_msg = check_and_cast<SelfMsg_Base *>(msg);
@@ -320,7 +333,17 @@ string Node::modifyRandomBit(string s, int beg, int end, int &randPos) {
     return s;
 }
 
-void Node::sendAfter(Frame_Base *frame, double delay) {
+void Node::scheduleProcessingMessage(string processingMsg) {
+    if(processingMsg=="")
+        return;
+    const string uniqueIdentifier = "scheduled";
+    string scheduledMsg = uniqueIdentifier + processingMsg;
+    cMessage *msg = new cMessage(scheduledMsg.c_str());
+    scheduleAt(simTime() + PT, msg);
+}
+
+void Node::sendAfter(Frame_Base *frame, double delay, string processingMsg) {
+    scheduleProcessingMessage(processingMsg);
     scheduleAt(simTime() + delay, frame);
 }
 
@@ -391,18 +414,19 @@ void Node::to_physical_layer(Frame_Base *frame, string simulationParams) {
     }
 
     EV << "Current frame is scheduled to be received after " << simulationTime << " at " << simTime() + simulationTime << endl;
-    sendAfter(frame, simulationTime);
-    writeTransmitionToOutputFile(frame, modified,isLoss, isDuplication, isDelay);
+
+    string finishProcessingMsg = getTransmissionToOutputFileMsg(frame, modified, isLoss, isDuplication, isDelay);
+    sendAfter(frame, simulationTime, finishProcessingMsg);
     if (isDuplication) {
         EV << "Current frame will be duplicated" << endl;
         simulationTime += DD;
         EV << "Duplicated frame is scheduled to be received after " << simulationTime << " at " << simTime() + simulationTime << endl;
-        writeTransmitionToOutputFile(frame, modified, isLoss, 2, isDelay);
-        sendAfter(new Frame_Base(*frame), simulationTime);
+        string finishProcessingMsg = getTransmissionToOutputFileMsg(frame, modified, isLoss, 2, isDelay);
+        sendAfter(new Frame_Base(*frame), simulationTime, finishProcessingMsg);
         EV << "***************************" << endl;
         return;
     }
-    
+
     EV << "***************************" << endl;
     // send(frame, "outN");
 }
@@ -439,7 +463,7 @@ void Node::send_frame(frame_kind fk, seq_nr frame_nr, seq_nr frame_expected, vec
         }
     }
 
-    to_physical_layer(frame, simulationParams);//added frame_nr
+    to_physical_layer(frame, simulationParams);  // added frame_nr
 }
 
 Frame_Base *Node::create_frame(string payload, seq_nr frame_nr) {
@@ -532,14 +556,13 @@ string Node::byte_destuffing(string str) {
     return result;
 }
 
-
-void Node::clearFile(const std::string& filename) {
+void Node::clearFile(const std::string &filename) {
     std::ofstream file;
     file.open(filename, std::ios::out | std::ios::trunc);
     file.close();
 }
 void Node::writeStartingToOutputFile(Frame_Base *frame, string simulationParams) {
-    if(type == RECEIVER  || frame->getM_Type() != DATA) return;
+    if (type == RECEIVER || frame->getM_Type() != DATA) return;
     ofstream file;
     file.open(OUTPUT_FILE, ios::out | ios::app);
 
@@ -551,31 +574,36 @@ void Node::writeStartingToOutputFile(Frame_Base *frame, string simulationParams)
     file.close();
 }
 
-void Node::writeTransmitionToOutputFile(Frame_Base *frame, int modified, bool lost, int duplicate, bool delay) {
-    if(type == RECEIVER  || frame->getM_Type() != DATA) return;
+void Node::writeStringToFile(string msg) {
+    ofstream file;
+    file.open(OUTPUT_FILE, ios::out | ios::app);
+    if (!file.is_open()) {
+        cerr << "Error opening file: " << strerror(errno) << endl;
+    } else {
+        file << msg << endl;
+    }
+    file.close();
+}
+
+string Node::getTransmissionToOutputFileMsg(Frame_Base *frame, int modified, bool lost, int duplicate, bool delay) {
+    if (type == RECEIVER || frame->getM_Type() != DATA) return "";
+    stringstream ss;
+    ss << "At Time " << (duplicate == 2 ? simTime() + PT + DD : simTime() + PT) << ", " << getName() << "[sender][sent] frame with seq_num = " << frame->getSeq_Num() << " and payload=" << frame->getM_Payload() << " and trailer=" << frame->getMycheckbits() << ", Modified="
+       << modified << ", Lost=" << (lost ? "YES" : "NO") << ", Duplicate=" << duplicate << ", Delay=" << (delay ? ED : 0) << endl
+       << endl;
+    return ss.str();
+}
+void Node::writeRecievedToOutputFile(Frame_Base *frame, bool modified, int duplicate, string payload) {
+    if (type == SENDER || frame->getM_Type() != DATA) return;
     ofstream file;
     file.open(OUTPUT_FILE, ios::out | ios::app);
 
     if (!file.is_open()) {
         cerr << "Error opening file: " << strerror(errno) << endl;
     } else {
-        file << "At Time " << (duplicate == 2? simTime() + PT + DD:simTime() + PT) << ", " << getName() << "[sender][sent] frame with seq_num = " << frame->getSeq_Num() <<
-        " and payload=" << frame->getM_Payload() << " and trailer=" << frame->getMycheckbits() << ", Modified="
-        << modified << ", Lost=" << (lost? "YES": "NO") << ", Duplicate=" << duplicate << ", Delay=" << (delay? ED:0) << endl << endl;
-    }
-    file.close();
-}
-void Node::writeRecievedToOutputFile(Frame_Base *frame, bool modified, int duplicate, string payload) {
-    if(type == SENDER  || frame->getM_Type() != DATA) return;
-    ofstream file;
-    file.open(OUTPUT_FILE, ios::out | ios::app);
-    
-    if (!file.is_open()) {
-        cerr << "Error opening file: " << strerror(errno) << endl;
-    } else {
-        file << "At Time " << simTime() << ", " << getName() << "[reciever][recieved] frame with seq_num = " << frame->getSeq_Num() <<
-             " and payload=" << payload << " and trailer=" << frame->getMycheckbits() << ", Modified="
-             << (modified? "yes":"-1") << ", Duplicate=" << duplicate << endl << endl;
+        file << "At Time " << simTime() << ", " << getName() << "[reciever][recieved] frame with seq_num = " << frame->getSeq_Num() << " and payload=" << payload << " and trailer=" << frame->getMycheckbits() << ", Modified="
+             << (modified ? "yes" : "-1") << ", Duplicate=" << duplicate << endl
+             << endl;
     }
     file.close();
 }
@@ -588,38 +616,39 @@ void Node::writeToTimeOutFile(int seqNumber) {
         cerr << "Error opening file: " << strerror(errno) << endl;
     } else {
         file << "Time out event at time " << simTime() << ",at " << getName() << " for frame with seq_num = " << seqNumber << endl;
-    } 
+    }
     file.close();
 }
 
 void Node::writeAckToOutputFile(seq_nr seqNum) {
-    if(type == SENDER) return;
+    if (type == SENDER) return;
     ofstream file;
     file.open(OUTPUT_FILE, ios::out | ios::app);
-    
-    //bool isLoss = simulationParams[1] - '0';
+
+    // bool isLoss = simulationParams[1] - '0';
 
     // loss need to be handeled
 
     if (!file.is_open()) {
         cerr << "Error opening file: " << strerror(errno) << endl;
     } else {
-        file << "At Time " << simTime() + PT << ", " << getName() << " Sending ACK with number = " 
-            << seqNum << ", Loss " << "No" <<endl;
+        file << "At Time " << simTime() + PT << ", " << getName() << " Sending ACK with number = "
+             << seqNum << ", Loss "
+             << "No" << endl;
     }
     file.close();
 }
 
 void Node::writeNackToOutputFile(seq_nr seqNum, bool isLoss) {
-    if(type == SENDER) return;
+    if (type == SENDER) return;
     ofstream file;
     file.open(OUTPUT_FILE, ios::out | ios::app);
-    
+
     if (!file.is_open()) {
         cerr << "Error opening file: " << strerror(errno) << endl;
     } else {
         file << "At Time " << simTime() + PT << ", " << getName() << " Sending NACK with number = "
-            << seqNum << ", Loss " << (isLoss == 1 ? "Yes" : "No") <<endl;
+             << seqNum << ", Loss " << (isLoss == 1 ? "Yes" : "No") << endl;
     }
     file.close();
 }
