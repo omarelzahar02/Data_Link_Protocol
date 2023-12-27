@@ -1,72 +1,74 @@
 At Time 1, Node1 Introducing channel error with code = 1010
-At Time 1.5, Node1 Introducing channel error with code = 0001
 At Time 1.5, Node1[sender][sent] frame with seq_num = 0 and payload=#A flower, ‚ometimes# and trailer=00011010, Modified=10, Lost=NO, Duplicate=1, Delay=0
 
 
+At Time 1.5, Node1 Introducing channel error with code = 0001
 At Time 1.6, Node1[sender][sent] frame with seq_num = 0 and payload=#A flower, ‚ometimes# and trailer=00011010, Modified=10, Lost=NO, Duplicate=2, Delay=0
 
 
-At Time 2, Node1 Introducing channel error with code = 0000
 At Time 2, Node1[sender][sent] frame with seq_num = 1 and payload=#File @Edit Format View Help# and trailer=01100101, Modified=-1, Lost=NO, Duplicate=0, Delay=4
 
 
+At Time 2, Node1 Introducing channel error with code = 0000
 At Time 2.5, Node1[sender][sent] frame with seq_num = 2 and payload=#known as a bloom or blossom in flowering plants# and trailer=01101011, Modified=-1, Lost=NO, Duplicate=0, Delay=0
 
 
 At Time 2.5, Node0[reciever][recieved] frame with seq_num = 0 and payload=#A flower, ‚ometimes# and trailer=00011010, Modified=yes, Duplicate=0
 
-At Time 3, Node0 Sending NACK with number = 0, Loss No
 At Time 2.6, Node0[reciever][recieved] frame with seq_num = 0 and payload=#A flower, ‚ometimes# and trailer=00011010, Modified=yes, Duplicate=0
+
+At Time 3, Node0 Sending NACK with number = 0, Loss No
 
 At Time 3.5, Node0[reciever][recieved] frame with seq_num = 2 and payload=#known as a bloom or blossom in flowering plants# and trailer=01101011, Modified=-1, Duplicate=0
 
-At Time 4, Node1 Introducing channel error with code = 0000
 At Time 4.5, Node1[sender][sent] frame with seq_num = 0 and payload=#A flower, sometimes# and trailer=00011010, Modified=-1, Lost=NO, Duplicate=0, Delay=0
 
 
 At Time 5.5, Node0[reciever][recieved] frame with seq_num = 0 and payload=#A flower, sometimes# and trailer=00011010, Modified=-1, Duplicate=0
 
 At Time 6, Node0 Sending ACK with number = 1, Loss No
+
 At Time 7, Node0[reciever][recieved] frame with seq_num = 1 and payload=#File @Edit Format View Help# and trailer=01100101, Modified=-1, Duplicate=0
 
-At Time 7.5, Node0 Sending ACK with number = 2, Loss No
-At Time 7.5, Node0 Sending ACK with number = 3, Loss No
 At Time 7, Node1 Introducing channel error with code = 0100
+At Time 7.5, Node0 Sending ACK with number = 3, Loss No
+
 At Time 8.5, Node1 Introducing channel error with code = 0000
-At Time 9, Node1 Introducing channel error with code = 0001
 At Time 9, Node1[sender][sent] frame with seq_num = 4 and payload=#(plants of the division Magnoliophyta, is to facilitate reproduction,# and trailer=00001000, Modified=-1, Lost=NO, Duplicate=0, Delay=0
 
 
+At Time 9, Node1 Introducing channel error with code = 0001
 At Time 9.5, Node1[sender][sent] frame with seq_num = 5 and payload=#The biological function of $//a flower# and trailer=00011010, Modified=-1, Lost=NO, Duplicate=0, Delay=4
 
 
 At Time 10, Node0[reciever][recieved] frame with seq_num = 4 and payload=#(plants of the division Magnoliophyta, is to facilitate reproduction,# and trailer=00001000, Modified=-1, Duplicate=0
 
-At Time 10.5, Node0 Sending NACK with number = 3, Loss Yes
-At Time 11.5, Node1 Introducing channel error with code = 0000
+At Time 10.5, Node0 Sending NACK with number = 0, Loss No
+
 At Time 12, Node1[sender][sent] frame with seq_num = 3 and payload=#is the reproductive$ structure found also called// angiosperms$).# and trailer=00011000, Modified=-1, Lost=NO, Duplicate=0, Delay=0
 
 
 At Time 13, Node0[reciever][recieved] frame with seq_num = 3 and payload=#is the reproductive$ structure found also called// angiosperms$).# and trailer=00011000, Modified=-1, Duplicate=0
 
-At Time 13.5, Node0 Sending ACK with number = 4, Loss No
 At Time 13.5, Node0 Sending ACK with number = 5, Loss No
+
 At Time 14.5, Node0[reciever][recieved] frame with seq_num = 5 and payload=#The biological function of $//a flower# and trailer=00011010, Modified=-1, Duplicate=0
 
-At Time 15, Node0 Sending ACK with number = 6, Loss No
 At Time 14.5, Node1 Introducing channel error with code = 0100
+At Time 15, Node0 Sending ACK with number = 6, Loss No
+
 At Time 15, Node1 Introducing channel error with code = 0000
 At Time 15.5, Node1[sender][sent] frame with seq_num = 7 and payload=#$$the union of sperm with eggs.# and trailer=01100000, Modified=-1, Lost=NO, Duplicate=0, Delay=0
 
 
 At Time 16.5, Node0[reciever][recieved] frame with seq_num = 7 and payload=#$$the union of sperm with eggs.# and trailer=01100000, Modified=-1, Duplicate=0
 
-At Time 17, Node0 Sending NACK with number = 6, Loss Yes
-At Time 18, Node1 Introducing channel error with code = 0000
+At Time 17, Node0 Sending NACK with number = 0, Loss No
+
 At Time 18.5, Node1[sender][sent] frame with seq_num = 6 and payload=#usually by providing a mechanism for Flowers may facilitate outcrossing$# and trailer=00111100, Modified=-1, Lost=NO, Duplicate=0, Delay=0
 
 
 At Time 19.5, Node0[reciever][recieved] frame with seq_num = 6 and payload=#usually by providing a mechanism for Flowers may facilitate outcrossing$# and trailer=00111100, Modified=-1, Duplicate=0
 
-At Time 20, Node0 Sending ACK with number = 7, Loss No
 At Time 20, Node0 Sending ACK with number = 8, Loss No
+

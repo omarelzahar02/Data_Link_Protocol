@@ -20,8 +20,8 @@
 using namespace omnetpp;
 using namespace std;
 class Node : public cSimpleModule {
-    //public:
-    //bool timeToPrint = false;
+    // public:
+    // bool timeToPrint = false;
    private:
     /*Simulation Variables*/
     int NR_BUFS;
@@ -75,7 +75,7 @@ class Node : public cSimpleModule {
     bool between(seq_nr a, seq_nr b, seq_nr c);
     bool from_network_layer(Packet &p, string &simulationParams);
     void to_network_layer(Packet *p);
-    void to_physical_layer(Frame_Base *frame, string simulationParams = "0000");
+    void to_physical_layer(Frame_Base *frame, string simulationParams = "0000", bool isAgain = 0);
     void setNextWakeUpAfterTime(double time);
     string modifyRandomBit(string s, int beg, int end, int &randPos);
     void start_timer(seq_nr seqNum);
@@ -83,21 +83,21 @@ class Node : public cSimpleModule {
     void enable_network_layer(void);
     void disable_network_layer(void);
     bool checkForDelayedMsgsToSend(cMessage *msg);
-    void sendAfter(Frame_Base *frame, double delay, string processingMsg="");
-    void send_frame(frame_kind fk, seq_nr frame_nr, seq_nr frame_expected, vector<Packet> &buffer, string simulationParams = "0000");
+    void sendAfter(Frame_Base *frame, double delay, double processingMsgDelay, string processingMsg = "");
+    void send_frame(frame_kind fk, seq_nr frame_nr, seq_nr frame_expected, vector<Packet> &buffer, string simulationParams = "0000", bool isAgain = 0);
     bitset<8> check_sum(string payload);
     void simulate_sending(int Modification, int Loss, int Duplication, int Delay);
     string byte_stuffing(string str);
     string byte_destuffing(string str);
     Frame_Base *create_frame(string payload, seq_nr frame_nr);
-    void clearFile(const std::string& filename);
+    void clearFile(const std::string &filename);
     void writeStartingToOutputFile(Frame_Base *frame, string simulationParams = "0000");
-    void scheduleProcessingMessage(string processingMsg) ;
-//    void writeTransmitToOutputFile(Frame_Base *frame, string simulationParams = "0000");
+    void scheduleProcessingMessage(string processingMsg, double processingMsgDelay);
+    //    void writeTransmitToOutputFile(Frame_Base *frame, string simulationParams = "0000");
     void writeRecievedToOutputFile(Frame_Base *frame, bool modified, int duplicate, string payload);
     void writeToTimeOutFile(seq_nr seqNum);
-    void writeAckToOutputFile(seq_nr seqNum);
-    void writeNackToOutputFile(seq_nr seqNum, bool isLoss);
+    string getAckToOutputFileMsg(Frame_Base *frame);
+    string getNackToOutputFileMsg(Frame_Base *frame, bool isLoss);
 
    protected:
     virtual void initialize() override;
