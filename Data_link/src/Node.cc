@@ -38,13 +38,16 @@ void Node::handleCoordiantionMessage(InitMsg_Base *receivedMsg) {
 }
 
 void Node::to_network_layer(Packet *p) {
-    // Destuffing
-    EV << "Network Layer Received Packet: " << *p << endl;
+    EV << "Network Layer Received Frame: " << *p << endl;
 }
 void Node::handleReceivingData(Frame_Base *received_msg) {
     /**
      * Handling checksum error
      */
+    string receivedPayload = received_msg->getM_Payload();
+    string deStuffedPayload = byte_destuffing(receivedPayload);
+    received_msg->setM_Payload(deStuffedPayload.c_str());
+
     if (!is_received_data_correct(received_msg)) {
         EV << "CheckSum Error" << endl;
         if (no_nack) {
@@ -138,15 +141,13 @@ void Node::handleFrameMessage(Frame_Base *received_msg) {
 void Node::terminate() {
     // To call finish function here
     if (timers.size() == 0) {
-        cout << "Ending Simulation" << endl;
+        EV << "Ending Simulation" << endl;
         finish();
         endSimulation();
     }
     return;
 }
 void Node::check_for_network_layer_event(void) {
-    EV << "Lets Check" << endl;
-    EV << is_network_layer_enabled << endl;
     if (!is_network_layer_enabled) {
         return;
     }
@@ -154,7 +155,7 @@ void Node::check_for_network_layer_event(void) {
 
     bool isThereData = from_network_layer(outbuffer[next_frame_to_send % NR_BUFS], simulationParameters);
     if (!isThereData) {
-        // terminate();
+        terminate();
         return;
     }
     // LOGIC
@@ -170,8 +171,8 @@ void Node::check_for_network_layer_event(void) {
 
 void Node::enable_network_layer(void) {
     is_network_layer_enabled = true;
-    if (type == SENDER) {
-        sendSelfMsg(RECHECK_FOR_MSGS_TIME, IS_NETWORK_LAYER_READY);
+    if (type == SENDER && simTime() >= lstProcessingFinish) {
+        setNextWakeUpAfterTime(0);
     }
 }
 
@@ -217,7 +218,6 @@ void Node::handleMessage(cMessage *msg) {
         int mType = received_msg->getSelfMsgType();
         if (mType == IS_NETWORK_LAYER_READY) {
             check_for_network_layer_event();
-            // sendSelfMsg(RECHECK_FOR_MSGS_TIME, IS_NETWORK_LAYER_READY);
         } else if (mType == TIMER_TIME_OUT) {
             handleTimerTimeOut(received_msg->getSeqNumber());
         }
@@ -332,7 +332,6 @@ void Node::to_physical_layer(Frame_Base *frame, string simulationParams) {
     }
 
     simtime_t currSimTime = simTime();
-    static simtime_t lstProcessingFinish = 0;
     simtime_t currProcessingFinish = currSimTime + PT;
     if (currProcessingFinish - lstProcessingFinish < PT) {
         currProcessingFinish = lstProcessingFinish + PT;
@@ -503,5 +502,16 @@ string Node::byte_stuffing(string str) {
         result += str[i];
     }
     result += FLAG_BYTE;
+    return result;
+}
+
+string Node::byte_destuffing(string str) {
+    string result = "";
+    for (int i = 1; i < str.size() - 1; i++) {
+        if (str[i] == ESCAPE_BYTE) {
+            i++;
+        }
+        result += str[i];
+    }
     return result;
 }

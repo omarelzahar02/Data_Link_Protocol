@@ -15,7 +15,7 @@
 #define IS_NETWORK_LAYER_READY 0
 #define TIMER_TIME_OUT 1
 #define INPUT_FILE_0 "../src/input2.txt"
-#define INPUT_FILE_1 "../src/input1.txt"
+#define INPUT_FILE_1 "../src/input0.txt"
 
 #define inc(k)       \
     if (k < MAX_SEQ) \

@@ -29,10 +29,19 @@ void Coordinator::initialize() {
     InitMsg_Base *msgToSender = new InitMsg_Base("");
     msgToSender->setStartTime(startingTime);
     msgToSender->setType(SENDER);
-    send(msgToSender, "outNode0");
+    string senderNodePort;
+    string receiverNodePort;
+    if (startingNode == 0) {
+        senderNodePort = "outNode0";
+        receiverNodePort = "outNode1";
+    } else {
+        senderNodePort = "outNode1";
+        receiverNodePort = "outNode0";
+    }
+    send(msgToSender, senderNodePort.c_str());
     InitMsg_Base *msgToReceiver = new InitMsg_Base("");
     msgToReceiver->setType(RECEIVER);
-    send(msgToReceiver, "outNode1");
+    send(msgToReceiver, receiverNodePort.c_str());
 }
 
 void Coordinator::handleMessage(cMessage *msg) {

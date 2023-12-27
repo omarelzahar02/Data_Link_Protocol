@@ -35,6 +35,7 @@ class Node : public cSimpleModule {
     queue<string> status;
     node_type type;
     SelfMsg_Base *wakeUpMsg;
+
     /*Protocol Variables*/
     unordered_map<seq_nr, cMessage *> timers;
     seq_nr next_frame_to_send;
@@ -45,10 +46,11 @@ class Node : public cSimpleModule {
     vector<Packet> inbuffer;
     vector<Packet> outbuffer;
     vector<bool> arrived;
-    bool no_nack;
     seq_nr oldest_frame;
     bool is_network_layer_enabled;
+    bool no_nack;
 
+    simtime_t lstProcessingFinish = 0;
     bool isFirstTime = true;
 
     void setNodeType(node_type type);
@@ -81,7 +83,7 @@ class Node : public cSimpleModule {
     bitset<8> check_sum(string payload);
     void simulate_sending(int Modification, int Loss, int Duplication, int Delay);
     string byte_stuffing(string str);
-    // string byte_destuffing(Frame_Base *s);
+    string byte_destuffing(string str);
     Frame_Base *create_frame(string payload, seq_nr frame_nr);
 
    protected:
