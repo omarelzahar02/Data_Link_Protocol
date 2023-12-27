@@ -236,7 +236,7 @@ void Node::handleMessage(cMessage *msg) {
             InitMsg_Base *received_msg = check_and_cast<InitMsg_Base *>(msg);
             handleCoordiantionMessage(received_msg);
             if (type == SENDER) {
-                sendSelfMsg(RECHECK_FOR_MSGS_TIME, IS_NETWORK_LAYER_READY);
+                sendSelfMsg(startingTime, IS_NETWORK_LAYER_READY);
             }
             isInitMsg = true;
         } catch (...) {
